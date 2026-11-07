@@ -400,6 +400,14 @@
           </div>
         </div>
 
+        <!-- ACCOUNT SELECTION TABS -->
+        <div>
+          <label class="block text-[11px] uppercase tracking-wider font-bold text-[#556c63] mb-2 px-1">SELECT PAYMENT ACCOUNT</label>
+          <div id="payment-accounts-tabs" class="flex items-center gap-2 overflow-x-auto pb-1">
+            <!-- Dynamic account selection tabs will render here -->
+          </div>
+        </div>
+
         <div class="bg-[#fffdf9] border border-[#f3e2bb] rounded-3xl p-5 space-y-3.5">
           <div class="flex items-center gap-2">
             <span class="bg-[#00875a] text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full" id="pay-account-method">UPaisa</span>
@@ -1015,11 +1023,80 @@
       { id: "plan_500000", name: "Plan 10", price: 500000, dailyIncome: 50000, validityDays: 60, totalReturn: 3000000 }
     ];
 
-    const dynamicPaymentAccount = Object.freeze({
+    let activeDepositAccounts = [];
+    let selectedActiveAccount = {
       method: "UPaisa",
       title: "Bakhtmina",
       number: "03134588600"
-    });
+    };
+
+    // Firebase se dynamic active accounts fetch karna (Minimal reads quota)
+    function syncDynamicPaymentAccount() {
+      db.ref('deposit_accounts').on('value', (snap) => {
+        const data = snap.val();
+        if (data) {
+          // Sirf wahi accounts jo explicitly false na hon (true ya undefined dono chalenge)
+          activeDepositAccounts = Object.entries(data)
+            .map(([id, val]) => ({ id, ...val }))
+            .filter(a => a.isActive === true || a.isActive === undefined);
+
+          if (activeDepositAccounts.length > 0) {
+            const exists = activeDepositAccounts.find(a => a.id === selectedActiveAccount.id);
+            if (!exists) {
+              selectedActiveAccount = activeDepositAccounts[0];
+            }
+          }
+        } else {
+          activeDepositAccounts = [{
+            id: "default_1",
+            method: "UPaisa",
+            title: "Bakhtmina",
+            number: "03134588600"
+          }];
+          selectedActiveAccount = activeDepositAccounts[0];
+        }
+        renderPaymentAccountTabs();
+        updatePaymentAccountUI();
+      });
+    }
+
+    function renderPaymentAccountTabs() {
+      const container = document.getElementById("payment-accounts-tabs");
+      if (!container) return;
+
+      // Agar koi active account na ho
+      if (activeDepositAccounts.length === 0) {
+        container.innerHTML = `<p class="text-[12px] text-red-500 py-1">No active account available.</p>`;
+        return;
+      }
+
+      // Container ko hamesha visible rakhein
+      if (container.parentElement) {
+        container.parentElement.style.display = "block";
+      }
+
+      container.innerHTML = activeDepositAccounts.map(acc => {
+        const isSelected = (acc.id === selectedActiveAccount.id);
+        return `
+          <button type="button" onclick="selectDepositAccount('${acc.id}')" class="px-4 py-2.5 rounded-xl text-[13px] font-bold shrink-0 transition flex items-center gap-1.5 border-2 ${
+            isSelected 
+              ? 'bg-[#00875a] text-white border-[#00875a] shadow-sm' 
+              : 'bg-white text-[#0f221a] border-[#cfe2d7] hover:border-[#00875a]'
+          }">
+            <span>${escapeHtml(acc.method)} (${escapeHtml(acc.title)})</span>
+          </button>
+        `;
+      }).join('');
+    }
+
+    function selectDepositAccount(accId) {
+      const found = activeDepositAccounts.find(a => a.id === accId);
+      if (found) {
+        selectedActiveAccount = found;
+        renderPaymentAccountTabs();
+        updatePaymentAccountUI();
+      }
+    }
 
     const METHOD_LOGOS = Object.freeze({
       Easypaisa: "https://i.postimg.cc/R0DVWxTL/Screenshot-20261027-005853-1.jpg",
@@ -1091,7 +1168,7 @@
         setupUserListeners(user.uid);
         renderPlansCatalog();
         updateWithdrawWindowUI();
-        updatePaymentAccountUI();
+        syncDynamicPaymentAccount();
         startLiveIntervals();
       } else {
         detachUserListeners();
@@ -1191,9 +1268,9 @@
       const titleEl = document.getElementById("pay-account-title");
       const numberEl = document.getElementById("pay-account-number");
 
-      if (methodEl) methodEl.innerText = dynamicPaymentAccount.method;
-      if (titleEl) titleEl.innerText = dynamicPaymentAccount.title;
-      if (numberEl) numberEl.innerText = dynamicPaymentAccount.number;
+      if (methodEl) methodEl.innerText = selectedActiveAccount.method || "UPaisa";
+      if (titleEl) titleEl.innerText = selectedActiveAccount.title || "Bakhtmina";
+      if (numberEl) numberEl.innerText = selectedActiveAccount.number || "03134588600";
     }
 
     /* =========================================================================
@@ -1622,6 +1699,7 @@
       document.getElementById("pay-plan-total").innerText = "Rs " + total.toLocaleString('en-US');
       document.getElementById("pay-account-amount").innerText = "Rs " + price.toLocaleString('en-US');
 
+      renderPaymentAccountTabs();
       updatePaymentAccountUI();
       navigateTo("payment");
     }
@@ -1673,6 +1751,9 @@
           status: "pending",
           tid: sanitizedTid,
           senderNumber: senderNumber,
+          depositMethod: selectedActiveAccount.method || "UPaisa",
+          depositAccountTitle: selectedActiveAccount.title || "",
+          depositAccountNumber: selectedActiveAccount.number || "",
           lastClaimDatePKT: null,
           dateText: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
           createdAt: firebase.database.ServerValue.TIMESTAMP
