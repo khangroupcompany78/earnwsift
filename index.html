@@ -1,0 +1,2267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Earn Swift - Smart Earning Platform</title>
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Firebase SDKs (v9 compat) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+  <style>
+    /* Base Resets */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #eaf1ed;
+      color: #0f221a;
+      user-select: none;
+    }
+
+    input, button, textarea, a {
+      user-select: auto;
+      font-family: inherit;
+    }
+
+    ::-webkit-scrollbar {
+      width: 0px;
+      background: transparent;
+    }
+
+    /* Toast Animations */
+    .toast-enter {
+      animation: toastIn 180ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .toast-exit {
+      animation: toastOut 140ms ease forwards;
+    }
+
+    @keyframes toastIn {
+      0% { opacity: 0; transform: translateY(-12px) scale(0.96); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    @keyframes toastOut {
+      0% { opacity: 1; transform: translateY(0); }
+      100% { opacity: 0; transform: translateY(-8px); }
+    }
+
+    /* Button Loading Spinner */
+    .btn-spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid currentColor;
+      border-right-color: transparent;
+      border-radius: 9999px;
+      animation: spin 650ms linear infinite;
+      display: inline-block;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Tab Styling */
+    .nav-tab.active .tab-icon-box {
+      background-color: #00875a;
+      color: #ffffff !important;
+      box-shadow: 0 4px 14px rgba(0, 135, 90, 0.3);
+    }
+
+    .nav-tab.active .tab-text {
+      color: #00875a !important;
+      font-weight: 700;
+    }
+
+    .nav-tab .tab-icon-box {
+      color: #556c63;
+    }
+
+    .method-disabled {
+      opacity: 0.6;
+      filter: grayscale(0.5);
+      cursor: not-allowed;
+    }
+
+    .shadow-toast {
+      box-shadow: 0 10px 28px -12px rgba(2, 44, 29, 0.35);
+    }
+
+    .ref-level-btn.active-level {
+      background-color: #00875a !important;
+      color: #ffffff !important;
+      border-color: #00875a !important;
+    }
+    .ref-level-btn.active-level .level-subtext {
+      color: #bbf0d8 !important;
+    }
+  </style>
+</head>
+
+<body class="bg-[#eaf1ed] text-[#0f221a] antialiased flex justify-center min-h-screen">
+
+  <div id="app-container" class="relative w-full max-w-[440px] min-h-screen bg-[#f7faf8] flex flex-col shadow-2xl overflow-x-hidden">
+
+    <!-- Global Toast Container -->
+    <div id="toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-[9999] flex flex-col gap-2 pointer-events-none w-[92vw] max-w-[380px]"></div>
+
+    <!-- MAIN SCROLLABLE VIEWPORT -->
+    <main id="main-content" class="flex-1 overflow-y-auto pb-[90px]">
+
+      <!-- ============================================== -->
+      <!-- SCREEN: AUTH - SIGN IN                         -->
+      <!-- ============================================== -->
+      <section id="view-login" class="view min-h-screen flex flex-col justify-center px-6 py-10">
+        <div class="flex flex-col items-center mb-7">
+          <img src="https://i.postimg.cc/vHyrdM8m/file-00000000949081f5973fe133c8c9eb35.png" alt="Earn Swift Logo" class="w-16 h-16 rounded-2xl object-cover shadow-lg shadow-emerald-900/15 mb-3 bg-white p-1 border border-[#cfe2d7]" />
+          <h1 class="text-2xl font-bold text-[#0f221a]">Earn Swift</h1>
+          <p class="text-[12px] font-semibold text-[#00875a] tracking-wider uppercase mt-0.5">Fast & Reliable Income</p>
+          <p class="text-[13px] text-[#556c63] mt-1">Sign in to your account</p>
+        </div>
+
+        <div class="bg-white border border-[#cfe2d7] rounded-3xl p-6 shadow-sm space-y-4">
+          <form id="login-form" onsubmit="handleEmailLogin(event, this)" class="space-y-4">
+            <div>
+              <label class="block text-[12px] font-medium text-[#0f221a] mb-1.5">Email</label>
+              <div class="relative">
+                <i data-lucide="mail" class="w-4 h-4 text-[#556c63] absolute left-3.5 top-4"></i>
+                <input type="email" id="login-email" required placeholder="you@example.com" class="w-full bg-[#fbfdfc] border border-[#cfe2d7] rounded-xl pl-10 pr-3 py-3.5 text-[14px] focus:outline-none focus:border-[#00875a]" />
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-[12px] font-medium text-[#0f221a] mb-1.5">Password</label>
+              <div class="relative">
+                <i data-lucide="lock" class="w-4 h-4 text-[#556c63] absolute left-3.5 top-4"></i>
+                <input type="password" id="login-password" required placeholder="••••••••" class="w-full bg-[#fbfdfc] border border-[#cfe2d7] rounded-xl pl-10 pr-3 py-3.5 text-[14px] focus:outline-none focus:border-[#00875a]" />
+              </div>
+            </div>
+
+            <button type="submit" id="btn-login-submit" class="w-full bg-[#00875a] hover:bg-[#006e49] text-white py-3.5 rounded-xl text-[14px] font-semibold active:scale-[0.99] transition flex items-center justify-center gap-2 mt-2 shadow-sm">
+              <span>Log in</span>
+            </button>
+          </form>
+
+          <p class="text-center text-[13px] text-[#556c63] pt-2">
+            Don't have an account?
+            <button onclick="navigateTo('register')" class="text-[#00875a] font-semibold hover:underline">Create one</button>
+          </p>
+        </div>
+      </section>
+
+      <!-- ============================================== -->
+      <!-- SCREEN: AUTH - REGISTER                        -->
+      <!-- ============================================== -->
+      <section id="view-register" class="view hidden min-h-screen flex flex-col justify-center px-6 py-8">
+        <div class="flex flex-col items-center mb-5">
+          <img src="https://i.postimg.cc/vHyrdM8m/file-00000000949081f5973fe133c8c9eb35.png" alt="Earn Swift Logo" class="w-16 h-16 rounded-2xl object-cover shadow-lg shadow-emerald-900/15 mb-3 bg-white p-1 border border-[#cfe2d7]" />
+          <h1 class="text-2xl font-bold text-[#0f221a]">Earn Swift</h1>
+          <p class="text-[12px] font-semibold text-[#00875a] tracking-wider uppercase mt-0.5">Join Earn Swift Today</p>
+          <p class="text-[13px] text-[#556c63] mt-1">Register and start earning daily income</p>
+        </div>
+
+        <div class="bg-white border border-[#cfe2d7] rounded-3xl p-6 shadow-sm space-y-4">
+          <form id="register-form" onsubmit="handleEmailRegister(event, this)" class="space-y-3.5">
+            <div>
+              <label class="block text-[12px] font-medium text-[#0f221a] mb-1">Username</label>
+              <div class="relative">
+                <span class="absolute left-3.5 top-3 text-[#556c63] text-[13px]">@</span>
+                <input type="text" id="reg-username" required maxlength="25" placeholder="yourname" class="w-full bg-[#fbfdfc] border border-[#cfe2d7] rounded-xl pl-9 pr-3 py-3 text-[13px] focus:outline-none focus:border-[#00875a]" />
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-[12px] font-medium text-[#0f221a] mb-1">Email</label>
+              <div class="relative">
+                <i data-lucide="mail" class="w-4 h-4 text-[#556c63] absolute left-3.5 top-3.5"></i>
+                <input type="email" id="reg-email" required placeholder="you@example.com" class="w-full bg-[#fbfdfc] border border-[#cfe2d7] rounded-xl pl-10 pr-3 py-3 text-[13px] focus:outline-none focus:border-[#00875a]" />
+              </div>
+            </div>
+
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <label class="text-[12px] font-medium text-[#0f221a]">Referral code</label>
+                <span id="ref-locked-badge" class="hidden text-[10px] font-bold text-[#00875a] bg-[#eaf7f1] px-2 py-0.5 rounded-full border border-[#bbf0d8]">
+                  <i data-lucide="lock" class="w-2.5 h-2.5 inline mr-0.5"></i> Verified Link
+                </span>
+              </div>
+              <div class="relative">
+                <i data-lucide="ticket" class="w-4 h-4 text-[#556c63] absolute left-3.5 top-3.5"></i>
+                <input type="text" id="reg-referral" placeholder="SWIFT123 (optional)" class="w-full bg-[#fbfdfc] border border-[#cfe2d7] rounded-xl pl-10 pr-3 py-3 text-[13px] uppercase focus:outline-none focus:border-[#00875a]" />
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-[12px] font-medium text-[#0f221a] mb-1">Password</label>
+              <div class="relative">
+                <i data-lucide="lock" class="w-4 h-4 text-[#556c63] absolute left-3.5 top-3.5"></i>
+                <input type="password" id="reg-password" required minlength="6" placeholder="••••••••" class="w-full bg-[#fbfdfc] border border-[#cfe2d7] rounded-xl pl-10 pr-3 py-3 text-[13px] focus:outline-none focus:border-[#00875a]" />
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-[12px] font-medium text-[#0f221a] mb-1">Confirm password</label>
+              <div class="relative">
+                <i data-lucide="lock" class="w-4 h-4 text-[#556c63] absolute left-3.5 top-3.5"></i>
+                <input type="password" id="reg-confirm-password" required minlength="6" placeholder="••••••••" class="w-full bg-[#fbfdfc] border border-[#cfe2d7] rounded-xl pl-10 pr-3 py-3 text-[13px] focus:outline-none focus:border-[#00875a]" />
+              </div>
+            </div>
+
+            <button type="submit" id="btn-register-submit" class="w-full bg-[#00875a] hover:bg-[#006e49] text-white py-3.5 rounded-xl text-[14px] font-semibold active:scale-[0.99] transition flex items-center justify-center gap-2 mt-2 shadow-sm">
+              <span>Create account</span>
+            </button>
+          </form>
+
+          <p class="text-center text-[13px] text-[#556c63] pt-1">
+            Already have an account?
+            <button onclick="navigateTo('login')" class="text-[#00875a] font-semibold hover:underline">Log in</button>
+          </p>
+        </div>
+      </section>
+
+      <!-- ============================================== -->
+      <!-- SCREEN: HOME / DASHBOARD                       -->
+      <!-- ============================================== -->
+      <section id="view-home" class="view hidden px-5 pt-6 pb-4 space-y-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <span class="text-[11px] font-bold tracking-wider text-[#00875a] uppercase">EARN SWIFT</span>
+            <h2 class="text-2xl font-bold text-[#0f221a] flex items-center gap-1.5">
+              Hi, <span id="dash-username">User</span>
+            </h2>
+          </div>
+          <button onclick="navigateTo('withdraw')" class="border border-[#cfe2d7] bg-white px-4 py-1.5 rounded-full text-[12px] font-semibold text-[#0f221a] shadow-sm active:scale-95 transition">
+            Withdraw
+          </button>
+        </div>
+
+        <!-- Balance Card -->
+        <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#00875a] to-[#005c3b] p-6 text-white shadow-lg shadow-emerald-950/20">
+          <div class="flex justify-between items-center mb-1">
+            <span class="text-[11px] tracking-wider uppercase font-semibold text-emerald-100/90">TOTAL BALANCE</span>
+            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white/20 text-[10px] font-semibold tracking-wider">
+              <i data-lucide="sparkles" class="w-3 h-3 text-[#ffd250]"></i> Live
+            </span>
+          </div>
+
+          <div class="text-4xl font-extrabold tracking-tight mt-1 mb-5 flex items-baseline">
+            <span>Rs&nbsp;</span><span id="dash-balance">0</span>
+          </div>
+
+          <div class="flex gap-3 mb-4">
+            <button onclick="navigateTo('withdraw')" class="flex-1 bg-[#ffd250] hover:bg-[#eec240] text-[#0f221a] py-3 px-4 rounded-xl font-bold text-[13px] flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition">
+              <i data-lucide="arrow-up-right" class="w-4 h-4"></i> Withdraw
+            </button>
+            <button onclick="navigateTo('plans')" class="flex-1 bg-[#00472e] hover:bg-[#003824] text-white py-3 px-4 rounded-xl font-bold text-[13px] flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition">
+              Invest now
+            </button>
+          </div>
+
+          <div class="pt-3 border-t border-white/10 flex items-center justify-between text-[12px]">
+            <span class="flex items-center gap-1.5 text-emerald-100">
+              <i data-lucide="trending-up" class="w-3.5 h-3.5"></i> Today's earning
+            </span>
+            <span class="font-bold">Rs <span id="dash-today-earning">0</span></span>
+          </div>
+        </div>
+
+        <!-- 2x2 Stats Grid -->
+        <div class="grid grid-cols-2 gap-3">
+          <div class="bg-white border border-[#cfe2d7] rounded-2xl p-4 shadow-sm">
+            <div class="w-7 h-7 rounded-lg bg-[#eaf7f1] text-[#00875a] flex items-center justify-center mb-2">
+              <i data-lucide="trending-up" class="w-4 h-4"></i>
+            </div>
+            <div class="text-xl font-bold text-[#0f221a]">Rs <span id="dash-stat-today">0</span></div>
+            <div class="text-[10px] font-semibold uppercase tracking-wider text-[#556c63] mt-0.5">TODAY</div>
+          </div>
+
+          <div class="bg-white border border-[#cfe2d7] rounded-2xl p-4 shadow-sm">
+            <div class="w-7 h-7 rounded-lg bg-[#eaf7f1] text-[#00875a] flex items-center justify-center mb-2">
+              <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+            </div>
+            <div class="text-xl font-bold text-[#0f221a]">Rs <span id="dash-stat-lifetime">0</span></div>
+            <div class="text-[10px] font-semibold uppercase tracking-wider text-[#556c63] mt-0.5">LIFETIME</div>
+          </div>
+
+          <div class="bg-white border border-[#cfe2d7] rounded-2xl p-4 shadow-sm">
+            <div class="w-7 h-7 rounded-lg bg-[#eaf7f1] text-[#00875a] flex items-center justify-center mb-2">
+              <i data-lucide="layers" class="w-4 h-4"></i>
+            </div>
+            <div class="text-xl font-bold text-[#0f221a]" id="dash-stat-active-plans">0</div>
+            <div class="text-[10px] font-semibold uppercase tracking-wider text-[#556c63] mt-0.5">ACTIVE PLANS</div>
+          </div>
+
+          <div class="bg-white border border-[#cfe2d7] rounded-2xl p-4 shadow-sm">
+            <div class="w-7 h-7 rounded-lg bg-[#eaf7f1] text-[#00875a] flex items-center justify-center mb-2">
+              <i data-lucide="users" class="w-4 h-4"></i>
+            </div>
+            <div class="text-xl font-bold text-[#0f221a]" id="dash-stat-referrals">0</div>
+            <div class="text-[10px] font-semibold uppercase tracking-wider text-[#556c63] mt-0.5">ACTIVE REFERRALS</div>
+          </div>
+        </div>
+
+        <!-- WhatsApp Channel Shortcut -->
+        <a href="https://whatsapp.com/channel/0029VbEBs2B9MF95B0cgz83U" target="_blank" rel="noopener noreferrer" class="w-full bg-white border border-[#cfe2d7] rounded-2xl p-4 flex items-center justify-between shadow-sm active:bg-gray-50 transition">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-[#25D366] text-white flex items-center justify-center shadow-xs">
+              <i data-lucide="message-circle" class="w-5 h-5"></i>
+            </div>
+            <div class="text-left">
+              <h4 class="text-[13px] font-bold text-[#0f221a]">Join Earn Swift Official Channel</h4>
+              <p class="text-[11px] text-[#556c63]">Official announcements, payout proofs & alerts.</p>
+            </div>
+          </div>
+          <i data-lucide="arrow-up-right" class="w-4 h-4 text-[#556c63]"></i>
+        </a>
+
+        <!-- Referral Link Card -->
+        <div class="bg-white border border-[#cfe2d7] rounded-2xl p-4 shadow-sm space-y-2.5">
+          <span class="text-[10px] font-semibold uppercase tracking-wider text-[#556c63]">YOUR REFERRAL CODE</span>
+          <div class="text-2xl font-extrabold text-[#00875a]" id="dash-ref-code">SWIFT000</div>
+
+          <div class="flex gap-2 pt-1">
+            <input type="text" readonly id="dash-ref-input" value="" class="flex-1 bg-[#f7faf8] border border-[#cfe2d7] text-[11px] text-[#556c63] px-3 py-2.5 rounded-xl select-all focus:outline-none" />
+            <button onclick="copyReferralLink()" class="bg-[#00875a] text-white px-4 py-2.5 rounded-xl text-[12px] font-semibold flex items-center gap-1.5 active:scale-95 transition">
+              <i data-lucide="share-2" class="w-3.5 h-3.5"></i> Share
+            </button>
+          </div>
+          <p class="text-[11px] text-[#556c63] leading-relaxed">
+            Invite friends to Earn Swift and earn generous commission on every active plan (8%, 3%, 1%).
+          </p>
+        </div>
+      </section>
+
+      <!-- ============================================== -->
+      <!-- SCREEN: PLANS                                  -->
+      <!-- ============================================== -->
+      <section id="view-plans" class="view hidden px-5 pt-6 pb-4 space-y-4">
+        <div>
+          <span class="text-[11px] font-bold uppercase tracking-wider text-[#00875a]">EARN SWIFT</span>
+          <h2 class="text-2xl font-bold text-[#0f221a]">Investment Plans</h2>
+          <p class="text-[12px] text-[#556c63] mt-1 leading-relaxed">
+            Choose an investment plan and claim daily income. 60 days verified earning streams.
+          </p>
+        </div>
+
+        <div id="plans-catalog-container" class="space-y-4"></div>
+      </section>
+
+      <!-- ============================================== -->
+      <!-- SCREEN: MANUAL PAYMENT (UPaisa TID FORM)       -->
+      <!-- ============================================== -->
+      <section id="view-payment" class="view hidden px-5 pt-6 pb-4 space-y-4">
+        <div class="flex items-center gap-3">
+          <button onclick="navigateTo('plans')" class="w-9 h-9 rounded-full bg-white border border-[#cfe2d7] flex items-center justify-center text-[#0f221a] active:scale-95 transition">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+          </button>
+          <div>
+            <h2 class="text-xl font-bold text-[#0f221a]">Payment Details</h2>
+            <p class="text-[11px] text-[#556c63]">Send amount to activate plan</p>
+          </div>
+        </div>
+
+        <div class="rounded-3xl bg-gradient-to-br from-[#00875a] to-[#005c3b] p-5 text-white shadow-md">
+          <div class="text-[10px] font-bold uppercase tracking-wider text-emerald-200" id="pay-plan-badge">PLAN 01</div>
+          <div class="text-3xl font-extrabold mt-1 mb-3" id="pay-plan-price">Rs 200</div>
+
+          <div class="grid grid-cols-3 gap-2 py-2.5 border-t border-white/10 text-center">
+            <div>
+              <div class="text-sm font-bold" id="pay-plan-daily">Rs 20</div>
+              <div class="text-[10px] uppercase font-semibold text-emerald-200">DAILY</div>
+            </div>
+            <div class="border-x border-white/10">
+              <div class="text-sm font-bold" id="pay-plan-validity">60 days</div>
+              <div class="text-[10px] uppercase font-semibold text-emerald-200">VALIDITY</div>
+            </div>
+            <div>
+              <div class="text-sm font-bold" id="pay-plan-total">Rs 1,200</div>
+              <div class="text-[10px] uppercase font-semibold text-emerald-200">TOTAL</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-[#fffdf9] border border-[#f3e2bb] rounded-3xl p-5 space-y-3.5">
+          <div class="flex items-center gap-2">
+            <span class="bg-[#00875a] text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full" id="pay-account-method">UPaisa</span>
+            <span class="text-[13px] font-bold text-[#0f221a]">Official Deposit Details</span>
+          </div>
+
+          <p class="text-[12px] text-[#8a4b0a] leading-relaxed">
+            Send the exact amount to this official account, then enter your transaction ID (TID) below.
+          </p>
+
+          <div class="bg-white border border-[#f3e2bb] rounded-2xl p-3.5 space-y-3">
+            <div class="flex items-center justify-between">
+              <div>
+                <span class="text-[10px] uppercase tracking-wider font-semibold text-[#556c63] block">ACCOUNT TITLE</span>
+                <span class="text-[14px] font-bold text-[#0f221a]" id="pay-account-title">Bakhtmina</span>
+              </div>
+              <button onclick="copyText(document.getElementById('pay-account-title').innerText, 'Account Title copied')" class="p-2 rounded-xl border border-[#cfe2d7] hover:bg-gray-50 active:scale-95 transition">
+                <i data-lucide="copy" class="w-4 h-4 text-[#556c63]"></i>
+              </button>
+            </div>
+
+            <div class="flex items-center justify-between pt-2 border-t border-[#f3e2bb]/40">
+              <div>
+                <span class="text-[10px] uppercase tracking-wider font-semibold text-[#556c63] block">ACCOUNT NUMBER</span>
+                <span class="text-[14px] font-bold text-[#0f221a]" id="pay-account-number">03134588600</span>
+              </div>
+              <button onclick="copyText(document.getElementById('pay-account-number').innerText, 'Account Number copied')" class="p-2 rounded-xl border border-[#cfe2d7] hover:bg-gray-50 active:scale-95 transition">
+                <i data-lucide="copy" class="w-4 h-4 text-[#556c63]"></i>
+              </button>
+            </div>
+
+            <div class="flex items-center justify-between pt-2 border-t border-[#f3e2bb]/40">
+              <div>
+                <span class="text-[10px] uppercase tracking-wider font-semibold text-[#556c63] block">AMOUNT TO PAY</span>
+                <span class="text-[14px] font-bold text-[#0f221a]" id="pay-account-amount">Rs 200</span>
+              </div>
+              <button onclick="copyText(document.getElementById('pay-account-amount').innerText.replace(/\D/g,''), 'Amount copied')" class="p-2 rounded-xl border border-[#cfe2d7] hover:bg-gray-50 active:scale-95 transition">
+                <i data-lucide="copy" class="w-4 h-4 text-[#556c63]"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Form TID -->
+        <div class="bg-white border border-[#cfe2d7] rounded-3xl p-5 shadow-sm space-y-4">
+          <form id="payment-form" onsubmit="submitPaymentRequest(event, this)" class="space-y-4">
+            <div>
+              <label class="block text-[11px] uppercase tracking-wider font-bold text-[#0f221a] mb-1.5">TRANSACTION ID (TID)</label>
+              <input type="text" id="pay-tid" required placeholder="e.g. 1029384756" class="w-full bg-[#fbfdfc] border border-[#cfe2d7] rounded-xl px-3.5 py-3 text-[13px] uppercase focus:outline-none focus:border-[#00875a]" />
+            </div>
+
+            <div>
+              <label class="block text-[11px] uppercase tracking-wider font-bold text-[#0f221a] mb-1.5">YOUR SENDER ACCOUNT NUMBER (11 Digits)</label>
+              <input type="tel" inputmode="numeric" id="pay-sender-account" required placeholder="03001234567" maxlength="11" oninput="this.value = this.value.replace(/\D/g, '').slice(0, 11)" class="w-full bg-[#fbfdfc] border border-[#cfe2d7] rounded-xl px-3.5 py-3 text-[13px] focus:outline-none focus:border-[#00875a]" />
+              <p class="text-[11px] text-[#556c63] mt-1.5">Enter 11-digit mobile number you transferred from.</p>
+            </div>
+
+            <button type="submit" id="btn-submit-payment" class="w-full bg-[#00875a] hover:bg-[#006e49] text-white py-3.5 rounded-xl text-[14px] font-semibold active:scale-[0.99] transition flex items-center justify-center gap-2 mt-2">
+              <span>Submit for Verification</span>
+            </button>
+          </form>
+        </div>
+      </section>
+
+      <!-- ============================================== -->
+      <!-- SCREEN: MY PLANS                               -->
+      <!-- ============================================== -->
+      <section id="view-myplans" class="view hidden px-5 pt-6 pb-4 space-y-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <span class="text-[11px] font-bold uppercase tracking-wider text-[#00875a]">EARN SWIFT INCOME</span>
+            <h2 class="text-2xl font-bold text-[#0f221a]">My Plans</h2>
+            <p class="text-[12px] text-[#556c63] mt-0.5">
+              Daily income Rs <span id="myplans-daily-total" class="font-bold text-[#00875a]">0</span> from active plans.
+            </p>
+          </div>
+          <button onclick="navigateTo('plans')" class="border border-[#cfe2d7] bg-white px-4 py-2 rounded-xl text-[12px] font-semibold text-[#0f221a] shadow-sm active:scale-95 transition">
+            Buy Plan
+          </button>
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-bold text-[#0f221a]">Active Income Streams</h3>
+            <span class="text-[11px] text-[#556c63]">Resets at 12:00 AM PKT</span>
+          </div>
+          <div id="active-plans-container" class="space-y-3"></div>
+        </div>
+      </section>
+
+      <!-- ============================================== -->
+      <!-- SCREEN: WITHDRAW LIST                          -->
+      <!-- ============================================== -->
+      <section id="view-withdraw" class="view hidden px-5 pt-6 pb-4 space-y-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <span class="text-[11px] font-bold uppercase tracking-wider text-[#00875a]">PAYOUTS</span>
+            <h2 class="text-2xl font-bold text-[#0f221a]">Withdraw</h2>
+            <p class="text-[12px] text-[#556c63] mt-0.5">Select your payout method.</p>
+          </div>
+          <button onclick="navigateTo('withdraw-history')" class="border border-[#cfe2d7] bg-white px-4 py-2 rounded-full text-[12px] font-semibold text-[#0f221a] shadow-sm flex items-center gap-1.5 active:scale-95 transition">
+            <i data-lucide="history" class="w-3.5 h-3.5 text-[#00875a]"></i> History
+          </button>
+        </div>
+
+        <!-- Available Balance Card -->
+        <div class="rounded-3xl bg-gradient-to-br from-[#00875a] to-[#005c3b] p-6 text-white shadow-lg shadow-emerald-950/20">
+          <span class="text-[11px] tracking-wider uppercase font-semibold text-emerald-100/90">AVAILABLE BALANCE</span>
+          <div class="text-4xl font-extrabold tracking-tight mt-1 mb-4">
+            Rs <span id="withdraw-available-balance">0</span>
+          </div>
+
+          <div class="flex items-center gap-2 flex-wrap mb-3">
+            <span id="withdraw-time-badge" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-[#ffd250] text-[#0f221a]">
+              <span class="w-2 h-2 rounded-full bg-[#0f221a] animate-pulse"></span> Open now
+            </span>
+            <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/20 text-emerald-50 text-[11px]">
+              <i data-lucide="clock" class="w-3 h-3"></i> 09:00 AM – 10:00 PM
+            </span>
+            <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/10 text-emerald-50 text-[11px]">
+              Min Rs 20
+            </span>
+          </div>
+
+          <div class="pt-3 border-t border-white/10 text-[12px] text-emerald-100 flex justify-between">
+            <span id="plan-requirement-badge">Active Plan Required</span>
+            <span>Lifetime: Rs <span id="withdraw-lifetime">0</span></span>
+          </div>
+        </div>
+
+        <!-- Methods -->
+        <div>
+          <div class="flex items-center justify-between mb-2.5">
+            <h3 class="text-sm font-bold text-[#0f221a]">Payout Methods</h3>
+            <span id="withdraw-status-caption" class="text-[11px] font-bold text-[#00875a] uppercase tracking-wider">WINDOW ACTIVE</span>
+          </div>
+
+          <div class="space-y-2.5" id="payout-methods-list">
+            <button onclick="handleMethodClick('Easypaisa')" class="method-btn w-full bg-white border border-[#cfe2d7] rounded-2xl p-3.5 flex items-center justify-between shadow-sm hover:border-[#00875a] active:scale-[0.99] transition">
+              <div class="flex items-center gap-3">
+                <img src="https://i.postimg.cc/R0DVWxTL/Screenshot-20261027-005853-1.jpg" alt="Easypaisa" class="w-11 h-11 rounded-xl object-contain border border-gray-100 p-0.5 bg-white" />
+                <div class="text-left">
+                  <h4 class="text-[13px] font-bold text-[#0f221a]">Easypaisa</h4>
+                  <p class="text-[11px] text-[#556c63]">Mobile Wallet Payout</p>
+                </div>
+              </div>
+              <i data-lucide="chevron-right" class="w-4 h-4 text-[#556c63]"></i>
+            </button>
+
+            <button onclick="handleMethodClick('JazzCash')" class="method-btn w-full bg-white border border-[#cfe2d7] rounded-2xl p-3.5 flex items-center justify-between shadow-sm hover:border-[#00875a] active:scale-[0.99] transition">
+              <div class="flex items-center gap-3">
+                <img src="https://i.postimg.cc/9frc5NjS/Screenshot-20261027-005908-2.jpg" alt="JazzCash" class="w-11 h-11 rounded-xl object-contain border border-gray-100 p-0.5 bg-white" />
+                <div class="text-left">
+                  <h4 class="text-[13px] font-bold text-[#0f221a]">JazzCash</h4>
+                  <p class="text-[11px] text-[#556c63]">Mobile Wallet Payout</p>
+                </div>
+              </div>
+              <i data-lucide="chevron-right" class="w-4 h-4 text-[#556c63]"></i>
+            </button>
+
+            <button onclick="handleMethodClick('UPaisa')" class="method-btn w-full bg-white border border-[#cfe2d7] rounded-2xl p-3.5 flex items-center justify-between shadow-sm hover:border-[#00875a] active:scale-[0.99] transition">
+              <div class="flex items-center gap-3">
+                <img src="https://i.postimg.cc/x8PwbK2D/Screenshot-20261027-010856-2.jpg" alt="UPaisa" class="w-11 h-11 rounded-xl object-contain border border-gray-100 p-0.5 bg-white" />
+                <div class="text-left">
+                  <h4 class="text-[13px] font-bold text-[#0f221a]">UPaisa</h4>
+                  <p class="text-[11px] text-[#556c63]">Mobile Wallet Payout</p>
+                </div>
+              </div>
+              <i data-lucide="chevron-right" class="w-4 h-4 text-[#556c63]"></i>
+            </button>
+
+            <button onclick="handleMethodClick('NayaPay')" class="method-btn w-full bg-white border border-[#cfe2d7] rounded-2xl p-3.5 flex items-center justify-between shadow-sm hover:border-[#00875a] active:scale-[0.99] transition">
+              <div class="flex items-center gap-3">
+                <img src="https://i.postimg.cc/RhQBQkc5/Screenshot-20261027-010525-2.jpg" alt="NayaPay" class="w-11 h-11 rounded-xl object-contain border border-gray-100 p-0.5 bg-white" />
+                <div class="text-left">
+                  <h4 class="text-[13px] font-bold text-[#0f221a]">NayaPay</h4>
+                  <p class="text-[11px] text-[#556c63]">Digital Wallet Payout</p>
+                </div>
+              </div>
+              <i data-lucide="chevron-right" class="w-4 h-4 text-[#556c63]"></i>
+            </button>
+
+            <button onclick="handleMethodClick('SadaPay')" class="method-btn w-full bg-white border border-[#cfe2d7] rounded-2xl p-3.5 flex items-center justify-between shadow-sm hover:border-[#00875a] active:scale-[0.99] transition">
+              <div class="flex items-center gap-3">
+                <img src="https://i.postimg.cc/RV49V0BC/IMG-17b4bbf7-4e1a-4966-950b-85bd9ee676fb.png" alt="SadaPay" class="w-11 h-11 rounded-xl object-contain border border-gray-100 p-0.5 bg-white" />
+                <div class="text-left">
+                  <h4 class="text-[13px] font-bold text-[#0f221a]">SadaPay</h4>
+                  <p class="text-[11px] text-[#556c63]">Fast FinTech Payout</p>
+                </div>
+              </div>
+              <i data-lucide="chevron-right" class="w-4 h-4 text-[#556c63]"></i>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================== -->
+      <!-- SCREEN: WITHDRAW SUBMIT FORM                   -->
+      <!-- ============================================== -->
+      <section id="view-withdraw-form" class="view hidden px-5 pt-6 pb-4 space-y-4">
+        <div class="flex items-center gap-3">
+          <button onclick="navigateTo('withdraw')" class="w-9 h-9 rounded-full bg-white border border-[#cfe2d7] flex items-center justify-center text-[#0f221a] active:scale-95 transition">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+          </button>
+          <div>
+            <h2 class="text-lg font-bold text-[#0f221a]">Submit Payout</h2>
+            <p class="text-[11px] text-[#556c63]">Earn Swift Payout Desk</p>
+          </div>
+        </div>
+
+        <div class="bg-white border border-[#cfe2d7] rounded-2xl p-4 flex items-center gap-3">
+          <img id="withdraw-method-logo" src="" alt="logo" class="w-10 h-10 rounded-xl object-contain border border-gray-100 p-0.5" />
+          <div>
+            <h3 class="text-[13px] font-bold text-[#0f221a]" id="withdraw-method-title">UPaisa</h3>
+            <p class="text-[11px] text-[#556c63]">Operating time: 09:00 AM – 10:00 PM PKT</p>
+          </div>
+        </div>
+
+        <form id="withdraw-request-form" onsubmit="handleWithdrawSubmit(event, this)" class="space-y-4">
+          <div class="bg-white border border-[#cfe2d7] rounded-3xl p-5 space-y-3">
+            <span class="block text-[11px] uppercase font-bold tracking-wider text-[#556c63]">AMOUNT (PKR)</span>
+            <div class="flex items-baseline gap-2 border-b border-[#cfe2d7] pb-2">
+              <span class="text-2xl font-bold text-[#00875a]">Rs</span>
+              <input type="number" id="withdraw-amount-input" min="20" step="1" required placeholder="0" class="w-full text-3xl font-extrabold text-[#0f221a] focus:outline-none bg-transparent" />
+            </div>
+
+            <div class="flex items-center justify-between pt-1">
+              <div class="flex gap-2">
+                <button type="button" onclick="setWithdrawAmount(20)" class="px-3 py-1 rounded-full bg-[#eaf7f1] text-[#00875a] text-[11px] font-semibold border border-[#bbf0d8] active:scale-95 transition">
+                  Min Rs 20
+                </button>
+                <button type="button" onclick="setWithdrawAmount('all')" class="px-3 py-1 rounded-full bg-[#eaf7f1] text-[#00875a] text-[11px] font-semibold border border-[#bbf0d8] active:scale-95 transition">
+                  Full Balance
+                </button>
+              </div>
+              <span class="text-[12px] text-[#556c63]">Balance: Rs <span id="form-balance-preview">0</span></span>
+            </div>
+            <p class="text-[11px] text-[#556c63]">Minimum withdrawal amount is <strong class="text-[#0f221a]">Rs 20</strong>.</p>
+          </div>
+
+          <div class="bg-white border border-[#cfe2d7] rounded-3xl p-5 space-y-3.5">
+            <div>
+              <label class="block text-[11px] uppercase font-bold tracking-wider text-[#556c63] mb-1.5">ACCOUNT HOLDER NAME (Letters only)</label>
+              <input type="text" id="withdraw-account-name" required placeholder="e.g. Bakhtmina" maxlength="40" oninput="this.value = this.value.replace(/[^a-zA-Z\s]/g, '')" class="w-full bg-[#fbfdfc] border border-[#cfe2d7] rounded-xl px-3.5 py-3 text-[13px] focus:outline-none focus:border-[#00875a]" />
+            </div>
+
+            <div>
+              <label class="block text-[11px] uppercase font-bold tracking-wider text-[#556c63] mb-1.5" id="withdraw-acc-label">ACCOUNT NUMBER (11 Digits)</label>
+              <input type="tel" inputmode="numeric" id="withdraw-account-num" required maxlength="11" placeholder="03001234567" oninput="this.value = this.value.replace(/\D/g, '').slice(0, 11)" class="w-full bg-[#fbfdfc] border border-[#cfe2d7] rounded-xl px-3.5 py-3 text-[13px] focus:outline-none focus:border-[#00875a]" />
+              <p class="text-[11px] text-[#556c63] mt-1.5">Enter exact 11-digit mobile wallet number (e.g. 03134588600).</p>
+            </div>
+          </div>
+
+          <button type="submit" id="btn-request-withdraw" class="w-full bg-[#00875a] hover:bg-[#006e49] text-white py-3.5 rounded-2xl text-[14px] font-semibold active:scale-[0.99] transition flex items-center justify-center gap-2">
+            <span>Confirm Withdrawal</span>
+            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+          </button>
+        </form>
+      </section>
+
+      <!-- ============================================== -->
+      <!-- SCREEN: WITHDRAW HISTORY                       -->
+      <!-- ============================================== -->
+      <section id="view-withdraw-history" class="view hidden px-5 pt-6 pb-4 space-y-4">
+        <div class="flex items-center gap-3">
+          <button onclick="navigateTo('withdraw')" class="w-9 h-9 rounded-full bg-white border border-[#cfe2d7] flex items-center justify-center text-[#0f221a] active:scale-95 transition">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+          </button>
+          <div>
+            <h2 class="text-xl font-bold text-[#0f221a]">Withdraw History</h2>
+            <p class="text-[11px] text-[#556c63]">Real-time status of payout requests.</p>
+          </div>
+        </div>
+        <div id="withdraw-history-list" class="space-y-3"></div>
+        <div id="withdraw-history-pagination" class="pt-1"></div>
+      </section>
+
+      <!-- ============================================== -->
+      <!-- SCREEN: DEPOSIT HISTORY                        -->
+      <!-- ============================================== -->
+      <section id="view-deposit-history" class="view hidden px-5 pt-6 pb-4 space-y-4">
+        <div class="flex items-center gap-3">
+          <button onclick="navigateTo('profile')" class="w-9 h-9 rounded-full bg-white border border-[#cfe2d7] flex items-center justify-center text-[#0f221a] active:scale-95 transition">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+          </button>
+          <div>
+            <h2 class="text-xl font-bold text-[#0f221a]">Deposit History</h2>
+            <p class="text-[11px] text-[#556c63]">Plan purchase requests & approvals only.</p>
+          </div>
+        </div>
+        <div id="deposit-history-list" class="space-y-3"></div>
+        <div id="deposit-history-pagination" class="pt-1"></div>
+      </section>
+
+      <!-- ============================================== -->
+      <!-- SCREEN: REFERRAL                               -->
+      <!-- ============================================== -->
+      <section id="view-referral" class="view hidden px-5 pt-6 pb-4 space-y-4">
+        <div>
+          <span class="text-[11px] font-bold uppercase tracking-wider text-[#00875a]">EARN SWIFT NETWORK</span>
+          <h2 class="text-2xl font-bold text-[#0f221a]">Invite & Earn</h2>
+          <p class="text-[12px] text-[#556c63] mt-1 leading-relaxed">
+            Multi-level commissions across 3 tiers (8%, 3%, 1%). Tap any level below to inspect active members.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="bg-white border border-[#cfe2d7] rounded-2xl p-4 shadow-sm">
+            <div class="w-7 h-7 rounded-lg bg-[#eaf7f1] text-[#00875a] flex items-center justify-center mb-2">
+              <i data-lucide="user-check" class="w-4 h-4"></i>
+            </div>
+            <div class="text-2xl font-extrabold text-[#0f221a]" id="ref-network-size">0</div>
+            <div class="text-[10px] uppercase font-semibold text-[#556c63] tracking-wider mt-0.5">TOTAL ACTIVE NETWORK</div>
+          </div>
+
+          <div class="bg-white border border-[#cfe2d7] rounded-2xl p-4 shadow-sm">
+            <div class="text-[10px] uppercase font-semibold text-[#556c63] tracking-wider">TOTAL EARNINGS</div>
+            <div class="text-2xl font-extrabold text-[#00875a] mt-3">Rs <span id="ref-commission-earned">0</span></div>
+          </div>
+        </div>
+
+        <div class="bg-white border border-[#cfe2d7] rounded-3xl p-5 shadow-sm space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="text-[10px] font-bold uppercase tracking-wider text-[#556c63]">YOUR UNIQUE CODE</span>
+              <div class="text-2xl font-extrabold text-[#00875a]" id="ref-display-code">SWIFT000</div>
+            </div>
+            <button onclick="copyReferralCode()" class="border border-[#cfe2d7] bg-white px-3 py-1.5 rounded-xl text-[12px] font-semibold text-[#0f221a] flex items-center gap-1.5 active:scale-95 transition">
+              <i data-lucide="copy" class="w-3.5 h-3.5 text-[#556c63]"></i> Copy Code
+            </button>
+          </div>
+
+          <div class="flex gap-2">
+            <input type="text" readonly id="ref-link-input" value="" class="flex-1 bg-[#f7faf8] border border-[#cfe2d7] text-[11px] text-[#556c63] px-3 py-2.5 rounded-xl select-all focus:outline-none" />
+            <button onclick="copyReferralLink()" class="bg-[#00875a] text-white px-4 py-2.5 rounded-xl text-[12px] font-semibold flex items-center gap-1.5 active:scale-95 transition">
+              <i data-lucide="share-2" class="w-3.5 h-3.5"></i> Share
+            </button>
+          </div>
+          <p class="text-[11px] text-[#556c63] leading-relaxed">
+            Commission adds directly to wallet upon plan activation.
+          </p>
+        </div>
+
+        <div>
+          <span class="text-[11px] font-bold uppercase tracking-wider text-[#556c63] block mb-2 px-1">SELECT LEVEL TO VIEW</span>
+          <div class="grid grid-cols-3 gap-2">
+            <button type="button" onclick="selectReferralLevel(1)" id="ref-level-btn-1" class="ref-level-btn active-level bg-white border border-[#cfe2d7] rounded-2xl p-3 text-center shadow-xs transition active:scale-95">
+              <span class="text-[10px] uppercase font-bold block">LEVEL 1</span>
+              <div class="text-xl font-extrabold my-0.5">8%</div>
+              <span class="text-[10px] level-subtext text-emerald-200"><span id="ref-lvl1-count">0</span> Active</span>
+            </button>
+
+            <button type="button" onclick="selectReferralLevel(2)" id="ref-level-btn-2" class="ref-level-btn bg-white border border-[#cfe2d7] rounded-2xl p-3 text-center shadow-xs transition active:scale-95 text-[#0f221a]">
+              <span class="text-[10px] uppercase font-bold text-[#556c63] block">LEVEL 2</span>
+              <div class="text-xl font-extrabold my-0.5">3%</div>
+              <span class="text-[10px] level-subtext text-[#556c63]"><span id="ref-lvl2-count">0</span> Active</span>
+            </button>
+
+            <button type="button" onclick="selectReferralLevel(3)" id="ref-level-btn-3" class="ref-level-btn bg-white border border-[#cfe2d7] rounded-2xl p-3 text-center shadow-xs transition active:scale-95 text-[#0f221a]">
+              <span class="text-[10px] uppercase font-bold text-[#556c63] block">LEVEL 3</span>
+              <div class="text-xl font-extrabold my-0.5">1%</div>
+              <span class="text-[10px] level-subtext text-[#556c63]"><span id="ref-lvl3-count">0</span> Active</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-white border border-[#cfe2d7] rounded-3xl p-5 shadow-sm space-y-3">
+          <div class="flex items-center justify-between pb-2 border-b border-[#cfe2d7]/50">
+            <div>
+              <h4 class="text-[13px] font-bold text-[#0f221a]" id="ref-current-level-title">Level 1 Members</h4>
+              <p class="text-[11px] text-[#556c63]">Commission earned: <strong class="text-[#00875a]" id="ref-level-earned-display">Rs 0</strong></p>
+            </div>
+            <span class="px-2.5 py-0.5 rounded-full bg-[#eaf7f1] text-[#00875a] text-[10px] font-bold border border-[#bbf0d8]" id="ref-current-rate-tag">
+              8% Commission
+            </span>
+          </div>
+          <div id="referrals-list" class="space-y-2"></div>
+        </div>
+      </section>
+
+      <!-- ============================================== -->
+      <!-- SCREEN: PROFILE                                -->
+      <!-- ============================================== -->
+      <section id="view-profile" class="view hidden px-5 pt-6 pb-4 space-y-4">
+        <div class="rounded-3xl bg-gradient-to-br from-[#00875a] to-[#005c3b] p-5 text-white shadow-lg shadow-emerald-950/20 flex items-center gap-4">
+          <img src="https://i.postimg.cc/vHyrdM8m/file-00000000949081f5973fe133c8c9eb35.png" alt="Profile" class="w-14 h-14 rounded-2xl bg-white p-0.5 border border-white/20 object-cover" />
+          <div>
+            <h2 class="text-lg font-bold" id="profile-username">User</h2>
+            <div class="flex items-center gap-1.5 text-emerald-100 text-[12px] mt-0.5">
+              <i data-lucide="mail" class="w-3.5 h-3.5"></i>
+              <span id="profile-email">user@earnswift.com</span>
+            </div>
+            <div class="mt-1.5">
+              <span class="inline-block px-2.5 py-0.5 rounded-full bg-black/20 text-emerald-200 text-[10px] font-medium">
+                Earn Swift Official Member
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- History Menu -->
+        <div class="bg-white border border-[#cfe2d7] rounded-3xl p-4 shadow-sm space-y-1">
+          <span class="text-[11px] uppercase tracking-wider font-bold text-[#556c63] px-1">Transaction Records</span>
+
+          <button onclick="navigateTo('deposit-history')" class="w-full flex items-center justify-between py-3 px-1 rounded-xl hover:bg-gray-50 active:scale-[0.99] transition">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-xl bg-[#eaf7f1] text-[#00875a] flex items-center justify-center">
+                <i data-lucide="arrow-down-to-line" class="w-4 h-4"></i>
+              </div>
+              <div class="text-left">
+                <h4 class="text-[13px] font-bold text-[#0f221a]">Deposit History</h4>
+                <p class="text-[11px] text-[#556c63]">View plan purchase requests & approvals</p>
+              </div>
+            </div>
+            <i data-lucide="chevron-right" class="w-4 h-4 text-[#556c63]"></i>
+          </button>
+
+          <div class="border-t border-[#cfe2d7]"></div>
+
+          <button onclick="navigateTo('withdraw-history')" class="w-full flex items-center justify-between py-3 px-1 rounded-xl hover:bg-gray-50 active:scale-[0.99] transition">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-xl bg-[#fff8e8] text-[#a15c07] flex items-center justify-center">
+                <i data-lucide="arrow-up-to-line" class="w-4 h-4"></i>
+              </div>
+              <div class="text-left">
+                <h4 class="text-[13px] font-bold text-[#0f221a]">Withdraw History</h4>
+                <p class="text-[11px] text-[#556c63]">Payout requests & review status</p>
+              </div>
+            </div>
+            <i data-lucide="chevron-right" class="w-4 h-4 text-[#556c63]"></i>
+          </button>
+        </div>
+
+        <button onclick="handleSignOut(this)" class="w-full bg-[#fdf0f0] border border-[#f4cccc] rounded-2xl p-4 flex items-center justify-between text-left active:scale-[0.99] transition">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-red-100 text-[#b3261e] flex items-center justify-center">
+              <i data-lucide="log-out" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <h4 class="text-[13px] font-bold text-[#b3261e]">Sign Out</h4>
+              <p class="text-[11px] text-[#b3261e]/80">Log out from Earn Swift app</p>
+            </div>
+          </div>
+          <i data-lucide="chevron-right" class="w-4 h-4 text-[#b3261e]"></i>
+        </button>
+      </section>
+
+    </main>
+
+    <!-- BOTTOM NAVIGATION -->
+    <nav id="bottom-nav" class="hidden fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[440px] h-[74px] bg-white border-t border-[#cfe2d7] flex items-center justify-around px-2 z-50">
+      <button onclick="navigateTo('home')" id="tab-home" class="nav-tab flex flex-col items-center justify-center flex-1 h-full py-1 text-[#556c63] transition">
+        <div class="tab-icon-box w-11 h-9 rounded-xl flex items-center justify-center transition-all duration-200">
+          <i data-lucide="home" class="w-5 h-5"></i>
+        </div>
+        <span class="text-[10px] font-semibold mt-0.5 tab-text">Home</span>
+      </button>
+
+      <button onclick="navigateTo('plans')" id="tab-plans" class="nav-tab flex flex-col items-center justify-center flex-1 h-full py-1 text-[#556c63] transition">
+        <div class="tab-icon-box w-11 h-9 rounded-xl flex items-center justify-center transition-all duration-200">
+          <i data-lucide="trending-up" class="w-5 h-5"></i>
+        </div>
+        <span class="text-[10px] font-semibold mt-0.5 tab-text">Plans</span>
+      </button>
+
+      <button onclick="navigateTo('myplans')" id="tab-myplans" class="nav-tab flex flex-col items-center justify-center flex-1 h-full py-1 text-[#556c63] transition">
+        <div class="tab-icon-box w-11 h-9 rounded-xl flex items-center justify-center transition-all duration-200">
+          <i data-lucide="gift" class="w-5 h-5"></i>
+        </div>
+        <span class="text-[10px] font-semibold mt-0.5 tab-text">My Plans</span>
+      </button>
+
+      <button onclick="navigateTo('withdraw')" id="tab-withdraw" class="nav-tab flex flex-col items-center justify-center flex-1 h-full py-1 text-[#556c63] transition">
+        <div class="tab-icon-box w-11 h-9 rounded-xl flex items-center justify-center transition-all duration-200">
+          <i data-lucide="wallet" class="w-5 h-5"></i>
+        </div>
+        <span class="text-[10px] font-semibold mt-0.5 tab-text">Withdraw</span>
+      </button>
+
+      <button onclick="navigateTo('referral')" id="tab-referral" class="nav-tab flex flex-col items-center justify-center flex-1 h-full py-1 text-[#556c63] transition">
+        <div class="tab-icon-box w-11 h-9 rounded-xl flex items-center justify-center transition-all duration-200">
+          <i data-lucide="users" class="w-5 h-5"></i>
+        </div>
+        <span class="text-[10px] font-semibold mt-0.5 tab-text">Referral</span>
+      </button>
+
+      <button onclick="navigateTo('profile')" id="tab-profile" class="nav-tab flex flex-col items-center justify-center flex-1 h-full py-1 text-[#556c63] transition">
+        <div class="tab-icon-box w-11 h-9 rounded-xl flex items-center justify-center transition-all duration-200">
+          <i data-lucide="user" class="w-5 h-5"></i>
+        </div>
+        <span class="text-[10px] font-semibold mt-0.5 tab-text">Profile</span>
+      </button>
+    </nav>
+
+  </div>
+
+  <script>
+    /* =========================================================================
+       EARN SWIFT - PRODUCTION ENGINE & COMPLETE SECURITY ARCHITECTURE
+       ========================================================================= */
+
+    // 1. FIREBASE INITIALIZATION
+    const firebaseConfig = {
+      apiKey: "AIzaSyDVMXK7tctv--yBcKfsloaLrDM4Heyi_l4",
+      authDomain: "earnwsift.firebaseapp.com",
+      projectId: "earnwsift",
+      storageBucket: "earnwsift.firebasestorage.app",
+      messagingSenderId: "772382078530",
+      appId: "1:772382078530:web:c467c9982812621d5b1fdb"
+    };
+
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+
+    const auth = firebase.auth();
+    const db = firebase.database();
+
+    // =========================================================================
+    // 2. CATEGORY 1: QUOTA & CONNECTION SAVER (INACTIVITY DISCONNECT)
+    // =========================================================================
+    let idleTimer = null;
+    let isDbOnline = true;
+    const IDLE_TIMEOUT_MS = 120000; // 2 Minutes of idle disconnects to save slots
+
+    function wakeUpDatabase() {
+      if (!isDbOnline) {
+        db.goOnline();
+        isDbOnline = true;
+      }
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => {
+        db.goOffline();
+        isDbOnline = false;
+      }, IDLE_TIMEOUT_MS);
+    }
+
+    ['mousedown', 'mousemove', 'keydown', 'touchstart', 'scroll'].forEach(evt => {
+      window.addEventListener(evt, wakeUpDatabase, { passive: true });
+    });
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "hidden") {
+        db.goOffline();
+        isDbOnline = false;
+      } else {
+        wakeUpDatabase();
+      }
+    });
+
+    wakeUpDatabase();
+
+    // =========================================================================
+    // 3. BULLETPROOF ANTI-TAMPER TIME ENGINE (HARDWARE MONOTONIC CLOCK)
+    // =========================================================================
+    let baseServerEpoch = Date.now();
+    let basePerfStamp = performance.now();
+    let hasCalibrated = false;
+
+    db.ref(".info/serverTimeOffset").on("value", (snap) => {
+      const offset = Number(snap.val()) || 0;
+      baseServerEpoch = Date.now() + offset;
+      basePerfStamp = performance.now();
+      hasCalibrated = true;
+    });
+
+    function getCalibratedNow() {
+      const elapsedHardwareMs = Math.round(performance.now() - basePerfStamp);
+      return baseServerEpoch + elapsedHardwareMs;
+    }
+
+    // Exact Pakistan Standard Time (PKT = UTC+5)
+    function getPKTTimeParts(timestamp = getCalibratedNow()) {
+      const pktDate = new Date(timestamp + (5 * 60 * 60 * 1000));
+      return {
+        year: pktDate.getUTCFullYear(),
+        month: pktDate.getUTCMonth() + 1,
+        date: pktDate.getUTCDate(),
+        hours: pktDate.getUTCHours(),
+        minutes: pktDate.getUTCMinutes(),
+        seconds: pktDate.getUTCSeconds()
+      };
+    }
+
+    function getPKTDateString(timestamp = getCalibratedNow()) {
+      const p = getPKTTimeParts(timestamp);
+      return `${p.year}-${String(p.month).padStart(2, '0')}-${String(p.date).padStart(2, '0')}`;
+    }
+
+    const WITHDRAW_HOURS = Object.freeze({
+      openHour: 9,   // 09:00 AM PKT
+      closeHour: 22  // 10:00 PM PKT (22:00)
+    });
+
+    function isWithdrawOpen() {
+      const p = getPKTTimeParts();
+      return p.hours >= WITHDRAW_HOURS.openHour && p.hours < WITHDRAW_HOURS.closeHour;
+    }
+
+    // =========================================================================
+    // 4. FIXED CONFIGURATION (HARDCODED - 0 FIREBASE READS)
+    // =========================================================================
+    const FIXED_PLANS = [
+      { id: "plan_200",    name: "Plan 01", price: 200,    dailyIncome: 20,    validityDays: 60, totalReturn: 1200 },
+      { id: "plan_500",    name: "Plan 02", price: 500,    dailyIncome: 50,    validityDays: 60, totalReturn: 3000 },
+      { id: "plan_1500",   name: "Plan 03", price: 1500,   dailyIncome: 150,   validityDays: 60, totalReturn: 9000 },
+      { id: "plan_4000",   name: "Plan 04", price: 4000,   dailyIncome: 400,   validityDays: 60, totalReturn: 24000 },
+      { id: "plan_9000",   name: "Plan 05", price: 9000,   dailyIncome: 900,   validityDays: 60, totalReturn: 54000 },
+      { id: "plan_20000",  name: "Plan 06", price: 20000,  dailyIncome: 2000,  validityDays: 60, totalReturn: 120000 },
+      { id: "plan_45000",  name: "Plan 07", price: 45000,  dailyIncome: 4500,  validityDays: 60, totalReturn: 270000 },
+      { id: "plan_100000", name: "Plan 08", price: 100000, dailyIncome: 10000, validityDays: 60, totalReturn: 600000 },
+      { id: "plan_200000", name: "Plan 09", price: 200000, dailyIncome: 20000, validityDays: 60, totalReturn: 1200000 },
+      { id: "plan_500000", name: "Plan 10", price: 500000, dailyIncome: 50000, validityDays: 60, totalReturn: 3000000 }
+    ];
+
+    const dynamicPaymentAccount = Object.freeze({
+      method: "UPaisa",
+      title: "Bakhtmina",
+      number: "03134588600"
+    });
+
+    const METHOD_LOGOS = Object.freeze({
+      Easypaisa: "https://i.postimg.cc/R0DVWxTL/Screenshot-20261027-005853-1.jpg",
+      JazzCash: "https://i.postimg.cc/9frc5NjS/Screenshot-20261027-005908-2.jpg",
+      NayaPay: "https://i.postimg.cc/RhQBQkc5/Screenshot-20261027-010525-2.jpg",
+      SadaPay: "https://i.postimg.cc/RV49V0BC/IMG-17b4bbf7-4e1a-4966-950b-85bd9ee676fb.png",
+      UPaisa: "https://i.postimg.cc/x8PwbK2D/Screenshot-20261027-010856-2.jpg"
+    });
+
+    // =========================================================================
+    // 5. SECURITY: ACTION COOLDOWN & ANTI-SPAM MANAGER
+    // =========================================================================
+    const actionCooldowns = {};
+    function checkActionCooldown(actionKey, cooldownSecs) {
+      const now = Date.now();
+      if (actionCooldowns[actionKey] && now < actionCooldowns[actionKey]) {
+        const remaining = Math.ceil((actionCooldowns[actionKey] - now) / 1000);
+        showToast("error", `Please wait ${remaining}s before retrying.`);
+        return false;
+      }
+      actionCooldowns[actionKey] = now + (cooldownSecs * 1000);
+      return true;
+    }
+
+    // App State
+    let currentUser = null;
+    let balanceRefListener = null;
+    let plansRefListener = null;
+    let currentView = 'login';
+    let countdownTimerId = null;
+    let selectedReferralLevel = 1;
+
+    // Mutex
+    let isClaiming = false;
+    let isSubmittingDeposit = false;
+    let isSubmittingWithdraw = false;
+
+    // Pagination Limit State
+    let depositVisibleCount = 8;
+    let withdrawVisibleCount = 8;
+    let totalDepositCount = 0;
+    let totalWithdrawCount = 0;
+
+    let appState = {
+      user: {
+        uid: null,
+        username: "",
+        email: "",
+        referralCode: "",
+        referredBy: null,
+        balance: 0,
+        lifetimeEarned: 0,
+        todayEarning: 0,
+        networkSize: 0,
+        commissionEarned: 0
+      },
+      plans: [],
+      withdrawals: [],
+      referrals: []
+    };
+
+    /* =========================================================================
+       6. LISTENERS (BANDWIDTH SAVER)
+       ========================================================================= */
+    auth.onAuthStateChanged((user) => {
+      if (user) {
+        currentUser = user;
+        detachUserListeners();
+        setupUserListeners(user.uid);
+        renderPlansCatalog();
+        updateWithdrawWindowUI();
+        updatePaymentAccountUI();
+        startLiveIntervals();
+      } else {
+        detachUserListeners();
+        currentUser = null;
+        resetState();
+
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('ref')) {
+          navigateTo('register');
+        } else {
+          navigateTo('login');
+        }
+      }
+    });
+
+    let liveSubListeners = [];
+
+    function detachUserListeners() {
+      liveSubListeners.forEach(ref => ref.off());
+      liveSubListeners = [];
+      if (plansRefListener) {
+        plansRefListener.off();
+        plansRefListener = null;
+      }
+    }
+
+    function setupUserListeners(uid) {
+      // Static Profile
+      db.ref('users/' + uid).once('value', (snap) => {
+        const data = snap.val();
+        if (data) {
+          appState.user.uid = uid;
+          appState.user.username = data.username || currentUser.email.split('@')[0];
+          appState.user.email = currentUser.email;
+          appState.user.referralCode = data.referralCode || "";
+          appState.user.referredBy = data.referredBy || null;
+          appState.user.commissionEarned = Number(data.commissionEarned) || 0;
+          appState.user.networkSize = Number(data.networkSize) || 0;
+          appState.user.balance = Number(data.balance) || 0;
+          appState.user.todayEarning = Number(data.todayEarning) || 0;
+          appState.user.lifetimeEarned = Number(data.lifetimeEarned) || 0;
+          updateUI();
+          if (currentView === 'login' || currentView === 'register') {
+            navigateTo('home');
+          }
+        } else {
+          createNewUserRecord(currentUser);
+        }
+      });
+
+      // Scalar listeners
+      const balRef = db.ref('users/' + uid + '/balance');
+      balRef.on('value', snap => {
+        appState.user.balance = Number(snap.val()) || 0;
+        updateUI();
+      });
+      liveSubListeners.push(balRef);
+
+      const todayRef = db.ref('users/' + uid + '/todayEarning');
+      todayRef.on('value', snap => {
+        appState.user.todayEarning = Number(snap.val()) || 0;
+        updateUI();
+      });
+      liveSubListeners.push(todayRef);
+
+      const lifeRef = db.ref('users/' + uid + '/lifetimeEarned');
+      lifeRef.on('value', snap => {
+        appState.user.lifetimeEarned = Number(snap.val()) || 0;
+        updateUI();
+      });
+      liveSubListeners.push(lifeRef);
+
+      // Plans
+      plansRefListener = db.ref('users/' + uid + '/plans');
+      plansRefListener.on('value', (snap) => {
+        const data = snap.val();
+        appState.plans = data ? Object.entries(data).map(([k, v]) => ({ _fbKey: k, ...v })).reverse() : [];
+        updateUI();
+      });
+    }
+
+    function resetState() {
+      appState = {
+        user: { uid: null, username: "", email: "", referralCode: "", referredBy: null, balance: 0, lifetimeEarned: 0, todayEarning: 0, networkSize: 0, commissionEarned: 0 },
+        plans: [],
+        withdrawals: [],
+        referrals: []
+      };
+      depositVisibleCount = 8;
+      withdrawVisibleCount = 8;
+      if (countdownTimerId) clearInterval(countdownTimerId);
+      updateUI();
+    }
+
+    function updatePaymentAccountUI() {
+      const methodEl = document.getElementById("pay-account-method");
+      const titleEl = document.getElementById("pay-account-title");
+      const numberEl = document.getElementById("pay-account-number");
+
+      if (methodEl) methodEl.innerText = dynamicPaymentAccount.method;
+      if (titleEl) titleEl.innerText = dynamicPaymentAccount.title;
+      if (numberEl) numberEl.innerText = dynamicPaymentAccount.number;
+    }
+
+    /* =========================================================================
+       7. UNIQUE REFERRAL CODE & RECORD CREATION
+       ========================================================================= */
+    async function generateUniqueReferralCode() {
+      const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+      let rand = "";
+      for (let i = 0; i < 3; i++) {
+        rand += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      const timeSuffix = Date.now().toString(36).slice(-3).toUpperCase();
+      return "SWIFT" + rand + timeSuffix;
+    }
+
+    async function createNewUserRecord(user, customUsername = null, referralProvided = null) {
+      const username = (customUsername || user.displayName || user.email.split('@')[0]).trim();
+      const uniqueRefCode = await generateUniqueReferralCode();
+
+      let upline1 = null, upline2 = null, upline3 = null;
+
+      if (referralProvided) {
+        const cleanRef = referralProvided.trim().toUpperCase();
+        const codeSnap = await db.ref('referral_codes/' + cleanRef).once('value');
+        if (codeSnap.exists()) {
+          upline1 = codeSnap.val();
+          const upSnap = await db.ref('referral_uplines/' + upline1).once('value');
+          const upData = upSnap.val();
+          if (upData) {
+            upline2 = upData.up1 || null;
+            upline3 = upData.up2 || null;
+          }
+        }
+      }
+
+      const joinDateStr = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+      const updates = {};
+
+      updates[`referral_codes/${uniqueRefCode}`] = user.uid;
+      updates[`referral_uplines/${user.uid}`] = { up1: upline1, up2: upline2, up3: upline3 };
+      updates[`users/${user.uid}`] = {
+        username: username,
+        email: user.email,
+        referralCode: uniqueRefCode,
+        referredBy: referralProvided ? referralProvided.trim().toUpperCase() : null,
+        upline1: upline1,
+        upline2: upline2,
+        upline3: upline3,
+        balance: 0,
+        lifetimeEarned: 0,
+        todayEarning: 0,
+        networkSize: 0,
+        commissionEarned: 0,
+        createdAt: firebase.database.ServerValue.TIMESTAMP
+      };
+
+      if (upline1) {
+        updates[`users/${upline1}/referrals/${user.uid}`] = {
+          uid: user.uid, username: username, joinedDate: joinDateStr, level: 1, earned: 0, activePlansCount: 0
+        };
+      }
+      if (upline2) {
+        updates[`users/${upline2}/referrals/${user.uid}`] = {
+          uid: user.uid, username: username, joinedDate: joinDateStr, level: 2, earned: 0, activePlansCount: 0
+        };
+      }
+      if (upline3) {
+        updates[`users/${upline3}/referrals/${user.uid}`] = {
+          uid: user.uid, username: username, joinedDate: joinDateStr, level: 3, earned: 0, activePlansCount: 0
+        };
+      }
+
+      await db.ref().update(updates);
+    }
+
+    /* =========================================================================
+       8. VIEW NAVIGATION ROUTER
+       ========================================================================= */
+    function navigateTo(viewId) {
+      wakeUpDatabase();
+      currentView = viewId;
+      document.querySelectorAll(".view").forEach(v => v.classList.add("hidden"));
+
+      const targetView = document.getElementById("view-" + viewId);
+      if (targetView) targetView.classList.remove("hidden");
+
+      const bottomNav = document.getElementById("bottom-nav");
+      if (viewId === 'login' || viewId === 'register' || !currentUser) {
+        bottomNav.classList.add("hidden");
+      } else {
+        bottomNav.classList.remove("hidden");
+      }
+
+      document.querySelectorAll(".nav-tab").forEach(tab => tab.classList.remove("active"));
+
+      let baseTabId = viewId;
+      if (viewId.startsWith("withdraw")) baseTabId = "withdraw";
+      if (viewId === 'payment') baseTabId = "plans";
+      if (viewId === 'deposit-history') baseTabId = "profile";
+
+      const activeTab = document.getElementById("tab-" + baseTabId);
+      if (activeTab) activeTab.classList.add("active");
+
+      window.scrollTo(0, 0);
+
+      if (viewId === 'withdraw-history') {
+        fetchPaginatedWithdrawals();
+      } else if (viewId === 'deposit-history') {
+        fetchPaginatedDeposits();
+      } else if (viewId === 'referral') {
+        fetchReferralsList();
+      }
+
+      updateUI();
+      lucide.createIcons();
+    }
+
+    /* =========================================================================
+       9. WITHDRAW WINDOW & ACCURATE VALIDATION
+       ========================================================================= */
+    function hasActivePlan() {
+      return appState.plans.some(p => p.status === 'active');
+    }
+
+    function updateWithdrawWindowUI() {
+      const isOpen = isWithdrawOpen();
+      const badge = document.getElementById("withdraw-time-badge");
+      const caption = document.getElementById("withdraw-status-caption");
+      const planBadge = document.getElementById("plan-requirement-badge");
+      const methodButtons = document.querySelectorAll(".method-btn");
+      const hasPlan = hasActivePlan();
+
+      if (planBadge) {
+        planBadge.innerHTML = hasPlan 
+          ? `<span class="text-[#bbf0d8] font-semibold"><i data-lucide="check" class="w-3.5 h-3.5 inline mr-1"></i>Active Plan Verified</span>`
+          : `<span class="text-[#ffccd0] font-semibold"><i data-lucide="alert-circle" class="w-3.5 h-3.5 inline mr-1"></i>Active Plan Required</span>`;
+      }
+
+      if (isOpen) {
+        if (badge) {
+          badge.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-[#ffd250] text-[#0f221a]";
+          badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-[#0f221a] animate-pulse"></span> Open now`;
+        }
+        if (caption) {
+          caption.innerText = "WINDOW ACTIVE (09:00 AM – 10:00 PM PKT)";
+          caption.className = "text-[11px] font-bold text-[#00875a] uppercase tracking-wider";
+        }
+        methodButtons.forEach(btn => btn.classList.remove("method-disabled"));
+      } else {
+        if (badge) {
+          badge.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-[#fdf0f0] text-[#b3261e] border border-[#f4cccc]";
+          badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-[#b3261e]"></span> Closed`;
+        }
+        if (caption) {
+          caption.innerText = "OPENS AT 09:00 AM PKT";
+          caption.className = "text-[11px] font-bold text-[#b3261e] uppercase tracking-wider";
+        }
+        methodButtons.forEach(btn => btn.classList.add("method-disabled"));
+      }
+    }
+
+    function handleMethodClick(methodName) {
+      if (!isWithdrawOpen()) {
+        showToast("error", "Withdrawals are closed right now. Operating hours: 09:00 AM to 10:00 PM PKT.");
+        return;
+      }
+
+      if (!hasActivePlan()) {
+        showToast("error", "Withdrawal restricted! You must have at least 1 active investment plan to withdraw.");
+        return;
+      }
+
+      if (appState.user.balance < 20) {
+        showToast("error", "Your balance is less than minimum withdrawal amount (Rs 20).");
+        return;
+      }
+
+      openWithdrawForm(methodName);
+    }
+
+    /* =========================================================================
+       10. UI STATE UPDATE
+       ========================================================================= */
+    function updateUI() {
+      const u = appState.user;
+
+      const dashUser = document.getElementById("dash-username");
+      if (dashUser) dashUser.innerText = u.username || "User";
+      document.getElementById("dash-balance").innerText = u.balance.toLocaleString('en-US');
+      document.getElementById("dash-today-earning").innerText = (u.todayEarning || 0).toLocaleString('en-US');
+      document.getElementById("dash-stat-today").innerText = (u.todayEarning || 0).toLocaleString('en-US');
+      document.getElementById("dash-stat-lifetime").innerText = (u.lifetimeEarned || 0).toLocaleString('en-US');
+      document.getElementById("dash-ref-code").innerText = u.referralCode || "SWIFT000";
+      document.getElementById("dash-ref-input").value = window.location.origin + "/?ref=" + (u.referralCode || "");
+
+      const activePlans = appState.plans.filter(p => p.status === 'active');
+      document.getElementById("dash-stat-active-plans").innerText = activePlans.length;
+
+      // Profile Screen
+      document.getElementById("profile-username").innerText = u.username || "User";
+      document.getElementById("profile-email").innerText = u.email || "";
+
+      // Withdraw Screen
+      document.getElementById("withdraw-available-balance").innerText = u.balance.toLocaleString('en-US');
+      document.getElementById("withdraw-lifetime").innerText = (u.lifetimeEarned || 0).toLocaleString('en-US');
+      document.getElementById("form-balance-preview").innerText = u.balance.toLocaleString('en-US');
+
+      // Referral Screen
+      document.getElementById("ref-commission-earned").innerText = (u.commissionEarned || 0).toLocaleString('en-US');
+      document.getElementById("ref-display-code").innerText = u.referralCode || "SWIFT000";
+      document.getElementById("ref-link-input").value = window.location.origin + "/?ref=" + (u.referralCode || "");
+
+      updateWithdrawWindowUI();
+      renderMyPlans();
+    }
+
+    /* =========================================================================
+       11. FIXED PLANS RENDERING
+       ========================================================================= */
+    function renderPlansCatalog() {
+      const container = document.getElementById("plans-catalog-container");
+      if (!container) return;
+
+      container.innerHTML = FIXED_PLANS.map(plan => `
+        <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#00875a] to-[#005c3b] p-6 text-white shadow-lg shadow-emerald-950/20">
+          <div class="flex items-center justify-between">
+            <div class="text-[11px] font-bold uppercase tracking-wider text-emerald-200">${plan.name}</div>
+            <span class="bg-white/20 text-white text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+              60 Days Plan
+            </span>
+          </div>
+
+          <div class="flex items-baseline gap-2 mt-1 mb-0.5">
+            <div class="text-3xl font-extrabold">Rs ${plan.price.toLocaleString('en-US')}</div>
+          </div>
+          <div class="text-[12px] text-emerald-100 mb-5">One time investment</div>
+
+          <div class="grid grid-cols-3 gap-2 py-3 border-y border-white/10 mb-5">
+            <div class="text-center">
+              <div class="text-base font-bold">Rs ${plan.dailyIncome.toLocaleString('en-US')}</div>
+              <div class="text-[10px] uppercase font-semibold text-emerald-200 mt-0.5">DAILY</div>
+            </div>
+            <div class="text-center border-x border-white/10">
+              <div class="text-base font-bold">${plan.validityDays} days</div>
+              <div class="text-[10px] uppercase font-semibold text-emerald-200 mt-0.5">VALIDITY</div>
+            </div>
+            <div class="text-center">
+              <div class="text-base font-bold">Rs ${plan.totalReturn.toLocaleString('en-US')}</div>
+              <div class="text-[10px] uppercase font-semibold text-emerald-200 mt-0.5">RETURN</div>
+            </div>
+          </div>
+
+          <button onclick="openPaymentForm(${plan.price}, '${escapeHtml(plan.name)}', ${plan.dailyIncome}, ${plan.validityDays}, ${plan.totalReturn})" class="w-full bg-white text-[#005c3b] hover:bg-gray-50 py-3.5 rounded-2xl font-bold text-[14px] shadow-sm active:scale-[0.99] transition">
+            Buy this plan
+          </button>
+        </div>
+      `).join('');
+
+      lucide.createIcons();
+    }
+
+    /* =========================================================================
+       12. ANTI-TAMPER CLAIM ENGINE
+       ========================================================================= */
+    function renderMyPlans() {
+      const activeContainer = document.getElementById("active-plans-container");
+      const dailyTotalSpan = document.getElementById("myplans-daily-total");
+
+      const activePlans = appState.plans.filter(p => p.status === 'active');
+      const dailyTotal = activePlans.reduce((sum, p) => sum + (Number(p.dailyIncome) || 0), 0);
+      if (dailyTotalSpan) dailyTotalSpan.innerText = dailyTotal.toLocaleString('en-US');
+
+      if (activePlans.length === 0) {
+        activeContainer.innerHTML = `
+          <div class="bg-white border border-[#cfe2d7] rounded-3xl p-8 text-center shadow-sm">
+            <h4 class="text-base font-bold text-[#0f221a] mb-1">No Active Plans</h4>
+            <p class="text-[12px] text-[#556c63] max-w-xs mx-auto mb-4 leading-relaxed">
+              Activate an investment plan in Earn Swift to start receiving daily income.
+            </p>
+            <button onclick="navigateTo('plans')" class="text-[13px] font-bold text-[#00875a] hover:underline">
+              Browse Plans
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      const todayPKT = getPKTDateString();
+
+      activeContainer.innerHTML = activePlans.map(plan => {
+        const isClaimedToday = plan.lastClaimDatePKT === todayPKT;
+        const planKey = plan._fbKey || plan.id;
+
+        return `
+          <div class="bg-white border border-[#cfe2d7] rounded-3xl p-4 shadow-sm flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-2xl bg-[#eaf7f1] text-[#00875a] flex items-center justify-center">
+                <i data-lucide="trending-up" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <h4 class="text-[13px] font-bold text-[#0f221a]">${escapeHtml(plan.planName)}</h4>
+                <p class="text-[11px] text-[#556c63] mt-0.5">Rs ${Number(plan.dailyIncome).toLocaleString('en-US')} daily · ${plan.daysLeft || 0} days left</p>
+              </div>
+            </div>
+
+            <div>
+              ${isClaimedToday ? `
+                <div class="claim-timer-box px-3 py-2 rounded-xl bg-gray-100 text-[#556c63] text-[11px] font-semibold flex items-center gap-1.5" data-plan-key="${planKey}">
+                  <i data-lucide="clock" class="w-3.5 h-3.5 text-[#556c63]"></i>
+                  <span class="timer-display">${getTimeUntilMidnightPKT()}</span>
+                </div>
+              ` : `
+                <button onclick="handleClaimIncome('${planKey}', this)" class="claim-btn bg-[#00875a] hover:bg-[#006e49] text-white px-5 py-2.5 rounded-xl text-[12px] font-bold active:scale-95 transition shadow-xs">
+                  Claim
+                </button>
+              `}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      lucide.createIcons();
+    }
+
+    function getTimeUntilMidnightPKT() {
+      const p = getPKTTimeParts();
+      const hoursLeft = Math.max(0, 23 - p.hours);
+      const minutesLeft = Math.max(0, 59 - p.minutes);
+      const secondsLeft = Math.max(0, 59 - p.seconds);
+      return `${String(hoursLeft).padStart(2, '0')}h ${String(minutesLeft).padStart(2, '0')}m ${String(secondsLeft).padStart(2, '0')}s`;
+    }
+
+    let lastResetDateStr = getPKTDateString();
+
+    function startLiveIntervals() {
+      if (countdownTimerId) clearInterval(countdownTimerId);
+      countdownTimerId = setInterval(() => {
+        const timerDisplays = document.querySelectorAll(".timer-display");
+        if (timerDisplays.length > 0) {
+          const remaining = getTimeUntilMidnightPKT();
+          timerDisplays.forEach(el => el.innerText = remaining);
+        }
+
+        const currentPktDay = getPKTDateString();
+        if (currentPktDay !== lastResetDateStr) {
+          lastResetDateStr = currentPktDay;
+          renderMyPlans();
+        }
+
+        updateWithdrawWindowUI();
+      }, 1000);
+    }
+
+    async function handleClaimIncome(planKey, btn) {
+      if (!currentUser || isClaiming) return;
+      if (!checkActionCooldown('claim_' + planKey, 3)) return;
+
+      const targetPlan = appState.plans.find(p => p._fbKey === planKey || p.id === planKey);
+      if (!targetPlan) {
+        showToast("error", "Plan not found.");
+        return;
+      }
+
+      const todayPKT = getPKTDateString();
+      if (targetPlan.lastClaimDatePKT === todayPKT) {
+        showToast("error", "Already claimed today. Next claim available after midnight.");
+        return;
+      }
+
+      isClaiming = true;
+      setButtonLoading(btn, true, "Claiming…");
+
+      try {
+        const fbKey = targetPlan._fbKey || planKey;
+        const planSnap = await db.ref(`users/${currentUser.uid}/plans/${fbKey}`).once('value');
+        const serverPlan = planSnap.val();
+
+        if (!serverPlan || serverPlan.status !== 'active') {
+          throw new Error("Plan is not currently active.");
+        }
+
+        if (serverPlan.lastClaimDatePKT === todayPKT) {
+          showToast("error", "Task already claimed today. Next reset at 12:00 AM.");
+          isClaiming = false;
+          setButtonLoading(btn, false);
+          return;
+        }
+
+        const matchingFixed = FIXED_PLANS.find(p => p.price === Number(serverPlan.price));
+        const income = matchingFixed ? matchingFixed.dailyIncome : (Number(serverPlan.dailyIncome) || 20);
+        const newDaysLeft = Math.max(0, (Number(serverPlan.daysLeft) || Number(serverPlan.totalDays) || 60) - 1);
+
+        const updates = {};
+        updates[`users/${currentUser.uid}/plans/${fbKey}/lastClaimDatePKT`] = todayPKT;
+        updates[`users/${currentUser.uid}/plans/${fbKey}/lastClaimTimestamp`] = firebase.database.ServerValue.TIMESTAMP;
+        updates[`users/${currentUser.uid}/plans/${fbKey}/daysLeft`] = newDaysLeft;
+        if (newDaysLeft <= 0) {
+          updates[`users/${currentUser.uid}/plans/${fbKey}/status`] = "completed";
+        }
+        updates[`users/${currentUser.uid}/balance`] = firebase.database.ServerValue.increment(income);
+        updates[`users/${currentUser.uid}/lifetimeEarned`] = firebase.database.ServerValue.increment(income);
+        updates[`users/${currentUser.uid}/todayEarning`] = firebase.database.ServerValue.increment(income);
+
+        await db.ref().update(updates);
+        showToast("success", `Rs ${income} daily income claimed!`);
+        renderMyPlans();
+      } catch (err) {
+        showToast("error", err.message || "Failed to claim income.");
+      } finally {
+        isClaiming = false;
+        setButtonLoading(btn, false);
+      }
+    }
+
+    /* =========================================================================
+       13. DEPOSIT SUBMISSION (UPaisa Auto Details)
+       ========================================================================= */
+    let pendingPlanDetails = { price: 200, name: "Plan 01", daily: 20, days: 60, total: 1200 };
+
+    function openPaymentForm(price, name, daily, days, total) {
+      pendingPlanDetails = { price, name, daily, days, total };
+      document.getElementById("pay-plan-badge").innerText = name;
+      document.getElementById("pay-plan-price").innerText = "Rs " + price.toLocaleString('en-US');
+      document.getElementById("pay-plan-daily").innerText = "Rs " + daily.toLocaleString('en-US');
+      document.getElementById("pay-plan-validity").innerText = days + " days";
+      document.getElementById("pay-plan-total").innerText = "Rs " + total.toLocaleString('en-US');
+      document.getElementById("pay-account-amount").innerText = "Rs " + price.toLocaleString('en-US');
+
+      updatePaymentAccountUI();
+      navigateTo("payment");
+    }
+
+    async function submitPaymentRequest(e, form) {
+      e.preventDefault();
+      if (!currentUser || isSubmittingDeposit) return;
+      if (!checkActionCooldown('deposit_submit', 5)) return;
+
+      const rawTid = document.getElementById("pay-tid").value.trim().toUpperCase();
+      const sanitizedTid = rawTid.replace(/[^A-Z0-9]/g, '');
+      const senderNumber = document.getElementById("pay-sender-account").value.trim();
+      const submitBtn = document.getElementById("btn-submit-payment");
+
+      if (!sanitizedTid || sanitizedTid.length < 6) {
+        showToast("error", "Transaction ID (TID) must be at least 6 characters.");
+        return;
+      }
+
+      if (!/^03\d{9}$/.test(senderNumber)) {
+        showToast("error", "Please provide a valid 11-digit mobile number starting with 03 (e.g. 03001234567).");
+        return;
+      }
+
+      isSubmittingDeposit = true;
+      setButtonLoading(submitBtn, true, "Verifying TID…");
+
+      try {
+        const tidCheckSnap = await db.ref('used_tids/' + sanitizedTid).once('value');
+        if (tidCheckSnap.exists()) {
+          showToast("error", "This TID has already been submitted!");
+          setButtonLoading(submitBtn, false);
+          isSubmittingDeposit = false;
+          return;
+        }
+
+        setButtonLoading(submitBtn, true, "Submitting…");
+
+        const newPlanKey = db.ref('users/' + currentUser.uid + '/plans').push().key;
+        const adminReqKey = db.ref('admin_deposit_requests').push().key;
+
+        const newPlanItem = {
+          id: "plan_" + Date.now(),
+          planName: pendingPlanDetails.name,
+          price: pendingPlanDetails.price,
+          dailyIncome: pendingPlanDetails.daily,
+          totalDays: pendingPlanDetails.days,
+          daysLeft: pendingPlanDetails.days,
+          status: "pending",
+          tid: sanitizedTid,
+          senderNumber: senderNumber,
+          lastClaimDatePKT: null,
+          dateText: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+          createdAt: firebase.database.ServerValue.TIMESTAMP
+        };
+
+        const updates = {};
+        updates[`used_tids/${sanitizedTid}`] = {
+          userId: currentUser.uid,
+          submittedAt: firebase.database.ServerValue.TIMESTAMP
+        };
+        updates[`users/${currentUser.uid}/plans/${newPlanKey}`] = newPlanItem;
+        updates[`admin_deposit_requests/${adminReqKey}`] = {
+          userId: currentUser.uid,
+          username: appState.user.username,
+          upline1: appState.user.referredBy || null,
+          ...newPlanItem
+        };
+
+        await db.ref().update(updates);
+        form.reset();
+        cachedDepositsList = [];
+        lastDepositFetchTime = 0;
+        showToast("info", "Plan deposit request submitted for admin approval.");
+        navigateTo("deposit-history");
+      } catch (err) {
+        showToast("error", err.message || "Failed to submit deposit request.");
+      } finally {
+        setButtonLoading(submitBtn, false);
+        isSubmittingDeposit = false;
+      }
+    }
+
+    /* =========================================================================
+       14. ATOMIC TRANSACTIONAL WITHDRAWAL SUBMISSION
+       ========================================================================= */
+    let selectedWithdrawMethod = "UPaisa";
+
+    function openWithdrawForm(method) {
+      selectedWithdrawMethod = method;
+      document.getElementById("withdraw-method-title").innerText = method;
+      document.getElementById("withdraw-method-logo").src = METHOD_LOGOS[method] || "";
+      document.getElementById("withdraw-acc-label").innerText = method.toUpperCase() + " ACCOUNT NUMBER (11 Digits)";
+      navigateTo("withdraw-form");
+    }
+
+    function setWithdrawAmount(val) {
+      const input = document.getElementById("withdraw-amount-input");
+      input.value = val === 'all' ? Math.floor(appState.user.balance) : val;
+    }
+
+    async function handleWithdrawSubmit(e, form) {
+      e.preventDefault();
+      if (!currentUser || isSubmittingWithdraw) return;
+      if (!checkActionCooldown('withdraw_submit', 5)) return;
+
+      if (!isWithdrawOpen()) {
+        showToast("error", "Withdrawals are closed. Operating hours are 09:00 AM to 10:00 PM PKT.");
+        return;
+      }
+
+      if (!hasActivePlan()) {
+        showToast("error", "Withdrawal blocked. You must have at least 1 active investment plan.");
+        return;
+      }
+
+      const amount = Math.floor(Number(document.getElementById("withdraw-amount-input").value));
+      const accName = document.getElementById("withdraw-account-name").value.trim();
+      const accNum = document.getElementById("withdraw-account-num").value.trim();
+      const submitBtn = document.getElementById("btn-request-withdraw");
+
+      if (isNaN(amount) || amount < 20) {
+        showToast("error", "Minimum withdrawal amount is Rs 20.");
+        return;
+      }
+      if (!/^[a-zA-Z\s]{3,40}$/.test(accName)) {
+        showToast("error", "Account holder name must contain only letters (min 3 letters).");
+        return;
+      }
+      if (!/^03\d{9}$/.test(accNum)) {
+        showToast("error", "Account number must be 11 digits starting with 03 (e.g. 03211234567).");
+        return;
+      }
+
+      isSubmittingWithdraw = true;
+      setButtonLoading(submitBtn, true, "Verifying Balance…");
+
+      try {
+        const balanceRef = db.ref('users/' + currentUser.uid + '/balance');
+        const txResult = await balanceRef.transaction((currentBal) => {
+          const val = Number(currentBal) || 0;
+          if (val < amount) {
+            return;
+          }
+          return val - amount;
+        });
+
+        if (!txResult.committed) {
+          showToast("error", "Insufficient server balance for this withdrawal.");
+          setButtonLoading(submitBtn, false);
+          isSubmittingWithdraw = false;
+          return;
+        }
+
+        setButtonLoading(submitBtn, true, "Submitting Request…");
+
+        const userWithdrawKey = db.ref('users/' + currentUser.uid + '/withdrawals').push().key;
+        const adminPayoutKey = db.ref('admin_payout_requests').push().key;
+
+        const newWithdrawRecord = {
+          id: "w_" + Date.now(),
+          method: selectedWithdrawMethod,
+          amount: amount,
+          accountTitle: accName,
+          accountNumber: accNum,
+          status: "pending",
+          dateText: new Date().toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }),
+          createdAt: firebase.database.ServerValue.TIMESTAMP
+        };
+
+        const updates = {};
+        updates[`users/${currentUser.uid}/withdrawals/${userWithdrawKey}`] = newWithdrawRecord;
+        updates[`admin_payout_requests/${adminPayoutKey}`] = {
+          userId: currentUser.uid,
+          username: appState.user.username,
+          ...newWithdrawRecord
+        };
+
+        await db.ref().update(updates);
+        form.reset();
+        cachedWithdrawalsList = [];
+        lastWithdrawFetchTime = 0;
+        showToast("success", `Withdrawal request for Rs ${amount.toLocaleString('en-US')} submitted!`);
+        navigateTo("withdraw-history");
+      } catch (err) {
+        showToast("error", err.message || "Failed to process withdrawal.");
+      } finally {
+        setButtonLoading(submitBtn, false);
+        isSubmittingWithdraw = false;
+      }
+    }
+
+    /* =========================================================================
+       15. REFERRAL FETCHING WITH SESSION CACHE
+       ========================================================================= */
+    let lastReferralsFetchTime = 0;
+
+    async function fetchReferralsList(force = false) {
+      if (!currentUser) return;
+      const now = Date.now();
+      if (!force && appState.referrals.length > 0 && (now - lastReferralsFetchTime < 45000)) {
+        renderSelectedReferralLevelUI();
+        return;
+      }
+
+      try {
+        const snap = await db.ref('users/' + currentUser.uid + '/referrals').once('value');
+        const data = snap.val();
+        appState.referrals = data ? Object.entries(data).map(([k, v]) => ({ _fbKey: k, ...v })).reverse() : [];
+        lastReferralsFetchTime = now;
+
+        const allActiveReferrals = appState.referrals.filter(r => (Number(r.activePlansCount) || 0) > 0);
+        document.getElementById("ref-network-size").innerText = allActiveReferrals.length;
+        document.getElementById("dash-stat-referrals").innerText = allActiveReferrals.length;
+
+        const l1Active = appState.referrals.filter(r => (r.level === 1 || !r.level) && (Number(r.activePlansCount) || 0) > 0);
+        const l2Active = appState.referrals.filter(r => r.level === 2 && (Number(r.activePlansCount) || 0) > 0);
+        const l3Active = appState.referrals.filter(r => r.level === 3 && (Number(r.activePlansCount) || 0) > 0);
+
+        document.getElementById("ref-lvl1-count").innerText = l1Active.length;
+        document.getElementById("ref-lvl2-count").innerText = l2Active.length;
+        document.getElementById("ref-lvl3-count").innerText = l3Active.length;
+
+        renderSelectedReferralLevelUI();
+      } catch (e) {
+        console.error("Referral fetch error", e);
+      }
+    }
+
+    function selectReferralLevel(levelNum) {
+      selectedReferralLevel = levelNum;
+      for (let i = 1; i <= 3; i++) {
+        const btn = document.getElementById(`ref-level-btn-${i}`);
+        if (btn) {
+          if (i === levelNum) {
+            btn.className = "ref-level-btn active-level bg-[#00875a] text-white border border-[#00875a] rounded-2xl p-3 text-center shadow-xs transition active:scale-95";
+            const sub = btn.querySelector(".level-subtext");
+            if (sub) sub.className = "text-[10px] level-subtext text-emerald-200";
+          } else {
+            btn.className = "ref-level-btn bg-white border border-[#cfe2d7] rounded-2xl p-3 text-center shadow-xs transition active:scale-95 text-[#0f221a]";
+            const sub = btn.querySelector(".level-subtext");
+            if (sub) sub.className = "text-[10px] level-subtext text-[#556c63]";
+          }
+        }
+      }
+      renderSelectedReferralLevelUI();
+    }
+
+    function renderSelectedReferralLevelUI() {
+      const container = document.getElementById("referrals-list");
+      const titleEl = document.getElementById("ref-current-level-title");
+      const tagEl = document.getElementById("ref-current-rate-tag");
+      const earnedEl = document.getElementById("ref-level-earned-display");
+      if (!container) return;
+
+      const rates = { 1: "8%", 2: "3%", 3: "1%" };
+      titleEl.innerText = `Level ${selectedReferralLevel} Members`;
+      tagEl.innerText = `${rates[selectedReferralLevel]} Commission`;
+
+      const levelMembers = appState.referrals.filter(r => {
+        const rLevel = r.level || 1;
+        const isActive = (Number(r.activePlansCount) || 0) > 0;
+        return rLevel === selectedReferralLevel && isActive;
+      });
+
+      const totalLevelEarned = levelMembers.reduce((sum, m) => sum + (Number(m.earned) || 0), 0);
+      earnedEl.innerText = `Rs ${totalLevelEarned.toLocaleString('en-US')}`;
+
+      if (levelMembers.length === 0) {
+        container.innerHTML = `<p class="text-[12px] text-[#556c63] py-3 text-center">No active members in Level ${selectedReferralLevel}. Inactive users without plans are hidden.</p>`;
+        return;
+      }
+
+      container.innerHTML = levelMembers.map(m => `
+        <div class="flex items-center justify-between py-2.5 border-b border-[#cfe2d7]/50 last:border-none">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-[#eaf7f1] text-[#00875a] font-bold text-xs flex items-center justify-center">
+              ${(m.username || 'U').charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <h5 class="text-[13px] font-bold text-[#0f221a]">${escapeHtml(m.username)}</h5>
+              <p class="text-[10px] text-[#556c63]">Joined: ${escapeHtml(m.joinedDate)}</p>
+            </div>
+          </div>
+          <div class="text-right">
+            <span class="text-[12px] font-bold text-[#00875a]">Rs ${(Number(m.earned) || 0).toLocaleString('en-US')}</span>
+            <span class="block text-[9px] text-[#556c63]">Commission</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    /* =========================================================================
+       16. PAGINATED HISTORY
+       ========================================================================= */
+    let cachedDepositsList = [];
+    let lastDepositFetchTime = 0;
+    let cachedWithdrawalsList = [];
+    let lastWithdrawFetchTime = 0;
+
+    async function fetchPaginatedDeposits(force = false) {
+      if (!currentUser) return;
+      const now = Date.now();
+      if (!force && cachedDepositsList.length > 0 && (now - lastDepositFetchTime < 60000)) {
+        renderDepositHistoryUI();
+        return;
+      }
+
+      try {
+        const snap = await db.ref('users/' + currentUser.uid + '/plans').once('value');
+        const data = snap.val();
+        cachedDepositsList = data ? Object.entries(data).map(([k, v]) => ({ _fbKey: k, ...v })).reverse() : [];
+        lastDepositFetchTime = now;
+        renderDepositHistoryUI();
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function loadMoreDepositHistory() {
+      depositVisibleCount += 8;
+      renderDepositHistoryUI();
+    }
+
+    function renderDepositHistoryUI() {
+      const container = document.getElementById("deposit-history-list");
+      const paginationContainer = document.getElementById("deposit-history-pagination");
+      if (!container) return;
+
+      if (!cachedDepositsList || cachedDepositsList.length === 0) {
+        container.innerHTML = `<div class="bg-white border border-[#cfe2d7] rounded-3xl p-8 text-center text-[#556c63] text-[12px]">No plan deposit requests found.</div>`;
+        if (paginationContainer) paginationContainer.innerHTML = "";
+        return;
+      }
+
+      const visiblePlans = cachedDepositsList.slice(0, depositVisibleCount);
+
+      container.innerHTML = visiblePlans.map(p => `
+        <div class="bg-white border border-[#cfe2d7] rounded-3xl p-4 shadow-sm flex items-center justify-between">
+          <div>
+            <div class="flex items-baseline gap-1.5">
+              <span class="text-[13px] font-bold text-[#0f221a]">${escapeHtml(p.planName)}</span>
+              <span class="text-[13px] font-extrabold text-[#00875a]">Rs ${Number(p.price).toLocaleString('en-US')}</span>
+            </div>
+            <p class="text-[11px] text-[#556c63] mt-0.5">TID: ${escapeHtml(p.tid)}</p>
+            <p class="text-[11px] text-[#556c63]">Sender: ${escapeHtml(p.senderNumber || 'N/A')} · ${escapeHtml(p.dateText)}</p>
+          </div>
+          <div>
+            <span class="inline-flex items-center gap-1 ${p.status === 'active' ? 'bg-[#eaf7f1] text-[#0d7a4a] ring-1 ring-[#bbf0d8]' : 'bg-[#fff8e8] text-[#a15c07] ring-1 ring-[#f6e0b0]'} rounded-full font-semibold px-2.5 py-1 text-[11px]">
+              <i data-lucide="${p.status === 'active' ? 'check-circle-2' : 'clock-3'}" class="w-3 h-3"></i> ${p.status === 'active' ? 'Active' : 'Pending'}
+            </span>
+          </div>
+        </div>
+      `).join('');
+
+      if (paginationContainer) {
+        if (depositVisibleCount < cachedDepositsList.length) {
+          paginationContainer.innerHTML = `
+            <button onclick="loadMoreDepositHistory()" class="w-full bg-white hover:bg-gray-50 border border-[#cfe2d7] text-[#00875a] py-3 rounded-2xl text-[13px] font-bold flex items-center justify-center gap-1.5 shadow-sm active:scale-98 transition">
+              <i data-lucide="chevron-down" class="w-4 h-4"></i> See More Records (${cachedDepositsList.length - depositVisibleCount} remaining)
+            </button>
+          `;
+        } else {
+          paginationContainer.innerHTML = "";
+        }
+      }
+
+      lucide.createIcons();
+    }
+
+    async function fetchPaginatedWithdrawals(force = false) {
+      if (!currentUser) return;
+      const now = Date.now();
+      if (!force && cachedWithdrawalsList.length > 0 && (now - lastWithdrawFetchTime < 60000)) {
+        renderWithdrawHistoryUI();
+        return;
+      }
+
+      try {
+        const snap = await db.ref('users/' + currentUser.uid + '/withdrawals').once('value');
+        const data = snap.val();
+        cachedWithdrawalsList = data ? Object.entries(data).map(([k, v]) => ({ _fbKey: k, ...v })).reverse() : [];
+        lastWithdrawFetchTime = now;
+        renderWithdrawHistoryUI();
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function loadMoreWithdrawHistory() {
+      withdrawVisibleCount += 8;
+      renderWithdrawHistoryUI();
+    }
+
+    function renderWithdrawHistoryUI() {
+      const container = document.getElementById("withdraw-history-list");
+      const paginationContainer = document.getElementById("withdraw-history-pagination");
+      if (!container) return;
+
+      if (!cachedWithdrawalsList || cachedWithdrawalsList.length === 0) {
+        container.innerHTML = `<div class="bg-white border border-[#cfe2d7] rounded-3xl p-8 text-center text-[#556c63] text-[12px]">No payout requests yet.</div>`;
+        if (paginationContainer) paginationContainer.innerHTML = "";
+        return;
+      }
+
+      const visibleWithdrawals = cachedWithdrawalsList.slice(0, withdrawVisibleCount);
+
+      container.innerHTML = visibleWithdrawals.map(w => `
+        <div class="bg-white border border-[#cfe2d7] rounded-3xl p-4 shadow-sm flex items-center justify-between">
+          <div>
+            <div class="flex items-baseline gap-1.5">
+              <span class="text-[13px] font-bold text-[#0f221a]">${escapeHtml(w.method)}</span>
+              <span class="text-[13px] font-extrabold text-[#00875a]">Rs ${Number(w.amount).toLocaleString('en-US')}</span>
+            </div>
+            <p class="text-[11px] text-[#556c63] mt-0.5">${escapeHtml(w.dateText)}</p>
+            <p class="text-[11px] text-[#556c63]">Account: ${escapeHtml(w.accountNumber)}</p>
+          </div>
+          <div>
+            <span class="inline-flex items-center gap-1 ${w.status === 'approved' ? 'bg-[#eaf7f1] text-[#0d7a4a] ring-1 ring-[#bbf0d8]' : w.status === 'rejected' ? 'bg-[#fdf0f0] text-[#b3261e] ring-1 ring-[#f4cccc]' : 'bg-[#fff8e8] text-[#a15c07] ring-1 ring-[#f6e0b0]'} rounded-full font-semibold px-2.5 py-1 text-[11px]">
+              <i data-lucide="${w.status === 'approved' ? 'check-circle-2' : w.status === 'rejected' ? 'x-circle' : 'clock-3'}" class="w-3 h-3"></i> ${w.status ? (w.status.charAt(0).toUpperCase() + w.status.slice(1)) : 'Pending'}
+            </span>
+          </div>
+        </div>
+      `).join('');
+
+      if (paginationContainer) {
+        if (withdrawVisibleCount < cachedWithdrawalsList.length) {
+          paginationContainer.innerHTML = `
+            <button onclick="loadMoreWithdrawHistory()" class="w-full bg-white hover:bg-gray-50 border border-[#cfe2d7] text-[#00875a] py-3 rounded-2xl text-[13px] font-bold flex items-center justify-center gap-1.5 shadow-sm active:scale-98 transition">
+              <i data-lucide="chevron-down" class="w-4 h-4"></i> See More Records (${cachedWithdrawalsList.length - withdrawVisibleCount} remaining)
+            </button>
+          `;
+        } else {
+          paginationContainer.innerHTML = "";
+        }
+      }
+
+      lucide.createIcons();
+    }
+
+    /* =========================================================================
+       17. AUTHENTICATION HANDLERS
+       ========================================================================= */
+    function handleEmailLogin(e, form) {
+      e.preventDefault();
+      if (!checkActionCooldown('auth_login', 4)) return;
+
+      const email = document.getElementById("login-email").value.trim();
+      const password = document.getElementById("login-password").value;
+      const btn = document.getElementById("btn-login-submit");
+
+      setButtonLoading(btn, true, "Signing in…");
+
+      auth.signInWithEmailAndPassword(email, password)
+        .then(() => {
+          showToast("success", "Welcome back to Earn Swift!");
+        })
+        .catch((err) => {
+          showToast("error", err.message || "Failed to sign in.");
+        })
+        .finally(() => {
+          setButtonLoading(btn, false);
+        });
+    }
+
+    function handleEmailRegister(e, form) {
+      e.preventDefault();
+      if (!checkActionCooldown('auth_register', 4)) return;
+
+      const username = document.getElementById("reg-username").value.trim();
+      const email = document.getElementById("reg-email").value.trim();
+      const password = document.getElementById("reg-password").value;
+      const confirmPassword = document.getElementById("reg-confirm-password").value;
+      const refCode = document.getElementById("reg-referral").value.trim();
+      const btn = document.getElementById("btn-register-submit");
+
+      if (password !== confirmPassword) {
+        showToast("error", "Passwords do not match.");
+        return;
+      }
+
+      setButtonLoading(btn, true, "Registering…");
+
+      auth.createUserWithEmailAndPassword(email, password)
+        .then((cred) => {
+          return createNewUserRecord(cred.user, username, refCode);
+        })
+        .then(() => {
+          showToast("success", "Earn Swift account created successfully!");
+        })
+        .catch((err) => {
+          showToast("error", err.message || "Failed to register.");
+        })
+        .finally(() => {
+          setButtonLoading(btn, false);
+        });
+    }
+
+    function handleSignOut(btn) {
+      if (btn) setButtonLoading(btn, true, "Signing out…");
+      auth.signOut().then(() => {
+        showToast("info", "Signed out successfully.");
+        navigateTo("login");
+      }).finally(() => {
+        if (btn) setButtonLoading(btn, false);
+      });
+    }
+
+    /* =========================================================================
+       18. UTILITIES & TOAST SYSTEM
+       ========================================================================= */
+    function copyText(text, successMsg = "Copied to clipboard") {
+      if (!text) return;
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(() => showToast("info", successMsg)).catch(() => fallbackCopy(text, successMsg));
+      } else {
+        fallbackCopy(text, successMsg);
+      }
+    }
+
+    function fallbackCopy(text, successMsg) {
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      textArea.style.position = "fixed";
+      textArea.style.left = "-999999px";
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        showToast("info", successMsg);
+      } catch (err) {
+        showToast("error", "Failed to copy text.");
+      }
+      document.body.removeChild(textArea);
+    }
+
+    function copyReferralCode() {
+      copyText(appState.user.referralCode || "SWIFT000", "Referral code copied");
+    }
+
+    function copyReferralLink() {
+      const link = window.location.origin + "/?ref=" + (appState.user.referralCode || "");
+      copyText(link, "Invite link copied");
+    }
+
+    const toastContainer = document.getElementById("toast-container");
+    const activeToasts = [];
+
+    function showToast(type, message) {
+      if (activeToasts.some(t => t.message === message)) return;
+      if (activeToasts.length >= 3) {
+        dismissToast(activeToasts[0].element);
+      }
+
+      const toast = document.createElement("div");
+      toast.className = "toast-enter pointer-events-auto bg-white border border-[#cfe2d7] rounded-xl p-[12px_14px] shadow-toast flex items-center gap-3 transition-all duration-150";
+
+      let iconMarkup = type === "success" 
+        ? `<div class="w-[26px] h-[26px] rounded-full bg-[#eaf7f1] border border-[#bbf0d8] flex items-center justify-center shrink-0 text-[#0d7a4a]"><i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i></div>`
+        : type === "error"
+        ? `<div class="w-[26px] h-[26px] rounded-full bg-[#fdf0f0] border border-[#f4cccc] flex items-center justify-center shrink-0 text-[#b3261e]"><i data-lucide="x-circle" class="w-3.5 h-3.5"></i></div>`
+        : `<div class="w-[26px] h-[26px] rounded-full bg-[#eaf1ed] border border-[#cfe2d7] flex items-center justify-center shrink-0 text-[#00875a]"><i data-lucide="check" class="w-3.5 h-3.5"></i></div>`;
+
+      toast.innerHTML = `${iconMarkup}<span class="text-[13px] font-semibold text-[#0f221a] leading-tight break-words flex-1">${escapeHtml(message)}</span>`;
+
+      const duration = type === "error" ? 4000 : 2800;
+      setTimeout(() => dismissToast(toast), duration);
+
+      toast.addEventListener("click", () => dismissToast(toast));
+      toastContainer.appendChild(toast);
+      lucide.createIcons();
+
+      activeToasts.push({ element: toast, message: message });
+    }
+
+    function dismissToast(element) {
+      const idx = activeToasts.findIndex(t => t.element === element);
+      if (idx !== -1) activeToasts.splice(idx, 1);
+      element.classList.remove("toast-enter");
+      element.classList.add("toast-exit");
+      setTimeout(() => {
+        if (element.parentNode) element.parentNode.removeChild(element);
+      }, 150);
+    }
+
+    function setButtonLoading(btn, isLoading, loadingText = "Saving…") {
+      if (!btn) return;
+      if (isLoading) {
+        btn.dataset.original = btn.innerHTML;
+        btn.disabled = true;
+        btn.style.opacity = "0.7";
+        btn.innerHTML = `<span class="btn-spinner"></span> <span>${loadingText}</span>`;
+      } else {
+        btn.disabled = false;
+        btn.style.opacity = "1";
+        if (btn.dataset.original) {
+          btn.innerHTML = btn.dataset.original;
+        }
+      }
+    }
+
+    function escapeHtml(str) {
+      if (!str) return "";
+      return String(str).replace(/[&<>'"]/g, tag => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        "'": '&#39;',
+        '"': '&quot;'
+      }[tag] || tag));
+    }
+
+    // 19. INITIALIZATION
+    window.addEventListener("DOMContentLoaded", () => {
+      lucide.createIcons();
+      renderPlansCatalog();
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const refParam = urlParams.get('ref');
+
+      if (refParam) {
+        const cleanRef = refParam.trim().toUpperCase();
+        const regRefInput = document.getElementById("reg-referral");
+        const lockedBadge = document.getElementById("ref-locked-badge");
+
+        if (regRefInput) {
+          regRefInput.value = cleanRef;
+          regRefInput.readOnly = true;
+          regRefInput.classList.add("bg-[#eaf1ed]", "cursor-not-allowed", "text-[#00875a]", "font-bold");
+        }
+        if (lockedBadge) {
+          lockedBadge.classList.remove("hidden");
+        }
+
+        if (!auth.currentUser) {
+          navigateTo('register');
+        }
+      }
+    });
+  </script>
+</body>
+</html>
